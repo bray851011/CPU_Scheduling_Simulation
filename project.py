@@ -42,6 +42,20 @@ class Thread:
 def next_exp():
     pass
 
+
+
+def printBurstTimes(CPUBurstTimes, IOBurstTimes):
+
+    numCPUBursts = len(CPUBurstTimes)
+    for i in range(numCPUBursts):
+        print(f"--> CPU burst {CPUBurstTimes[i]} ms", end="")
+        if i < numCPUBursts - 1:
+            print(f" --> I/O burst {IOBurstTimes[i]} ms")
+        else:
+            print()
+
+
+
 if __name__ == "__main__":
 
     # argv[1], numProcesses -- the number of processes to stimulate
@@ -121,8 +135,9 @@ if __name__ == "__main__":
         arrivalTime = randList[0]
         CPUBursts = randList[1]
         CPUBurstTime = [item[0] for item in randList[2:-1]] + [randList[-1]]
-        print("CPU Burst Time: ", CPUBurstTime)
+        # print("CPU Burst Time: ", CPUBurstTime)
         IOBurstTime = [item[1] for item in randList[2:-1]]
+        # printBurstTimes(CPUBurstTime, IOBurstTime)
 
         # construct thread object
         threadsList.append(Thread(threadName, arrivalTime, CPUBursts,
@@ -134,6 +149,7 @@ if __name__ == "__main__":
         else:
             print(f'Process {threadName} (arrival time {arrivalTime} ms) '
                   f'{CPUBursts} CPU burst (tau {int(1 / lam)}ms)')
+        printBurstTimes(CPUBurstTime, IOBurstTime)
     print()
 
     output = open("simout.txt", "a+")
