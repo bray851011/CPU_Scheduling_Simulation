@@ -1,5 +1,7 @@
 
-def print_ready_Q(ready_queue):
+PRINT_UNTIL = 1000
+
+def printReadyQueue(ready_queue):
     res = '[Q '
     if len(ready_queue) == 0:
         res += 'empty]'

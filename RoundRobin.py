@@ -4,9 +4,9 @@ The RR algorithm is essentially the FCFS algorithm with predeﬁned time slice t
 If a process completes its CPU burst before a time slice expiration, the next process on the ready queue is immediately context-switched in to use the CPU.
 '''
 
-from helpers import print_ready_Q, writeData
+from helpers import printReadyQueue, writeData, PRINT_UNTIL
 
-def RR(procsList, timeSlice, f):
+def RR(procsList, f, timeSlice):
     count_context_switch = 0
     count_preemption = 0
     cpu_burst_time = [0,0]
@@ -42,11 +42,11 @@ def RR(procsList, timeSlice, f):
             cpu_burst_time[0] += running[2] - running[1]
             useful_time += running[2] - running[1]
             cpu_burst_time[1] += 1
-            if time <= 1000:
+            if time <= PRINT_UNTIL:
                 print(
                     f'time {time}ms: Process {procs_map[running[3]][0]} '
                     f'started using the CPU for {running[2] - running[1]}ms burst',
-                    print_ready_Q(ready_queue))
+                    printReadyQueue(ready_queue))
 
         if running[0]:
             # preemption occur when ready queue isn't empty
@@ -55,11 +55,11 @@ def RR(procsList, timeSlice, f):
                     cpu_burst_time[0] -= running[2] - time
                     count_preemption += 1
                     curr_proc = running[3]
-                    if time <= 1000:
+                    if time <= PRINT_UNTIL:
                         print(
                             f'time {time}ms: Time slice expired; '
                             f'process {curr_proc} preempted with {procs_map[curr_proc][3][0]-(time-running[1])}ms to go',
-                            print_ready_Q(ready_queue))
+                            printReadyQueue(ready_queue))
                     
                     # context switch
                     procs_map[curr_proc][3][0] -= timeSlice
@@ -67,11 +67,11 @@ def RR(procsList, timeSlice, f):
                     ready_queue.append(curr_proc)
 
                 else: # no preemption
-                    if time <= 1000:
+                    if time <= PRINT_UNTIL:
                         print(
                             f'time {time}ms: Time slice expired; '
                             f'no preemption because ready queue is empty',
-                            print_ready_Q(ready_queue))
+                            printReadyQueue(ready_queue))
 
         if running[0]:
             # complete a CPU burst
@@ -83,32 +83,32 @@ def RR(procsList, timeSlice, f):
 
                 if len(procs_map[curr_proc][3]) == 0:
                     print(f'time {time}ms: Process {curr_proc} terminated',
-                          print_ready_Q(ready_queue))
+                          printReadyQueue(ready_queue))
                     del procs_map[curr_proc]
                 else:
-                    if time <= 1000:
+                    if time <= PRINT_UNTIL:
                         if procs_map[curr_proc][2] > 1:
                             print(
                                 f'time {time}ms: Process {procs_map[curr_proc][0]} '
                                 f'completed a CPU burst; '
                                 f'{procs_map[curr_proc][2]} bursts to go',
-                            print_ready_Q(ready_queue))
+                            printReadyQueue(ready_queue))
                         else:
                             print(
                                 f'time {time}ms: Process {procs_map[curr_proc][0]} '
                                 f'completed a CPU burst; '
                                 f'{procs_map[curr_proc][2]} burst to go',
-                                print_ready_Q(ready_queue))
+                                printReadyQueue(ready_queue))
                     block_time = procs_map[curr_proc][4][0] + 2
 
                     procs_map[curr_proc][4].pop(0)
 
-                    if time <= 1000:
+                    if time <= PRINT_UNTIL:
                         print(
                             f'time {time}ms: Process {procs_map[curr_proc][0]} '
                             f'switching out of CPU; will block on I/O '
                             f'until time {time + block_time}ms',
-                            print_ready_Q(ready_queue))
+                            printReadyQueue(ready_queue))
                     block_map[procs_map[curr_proc][0]] = \
                         time + block_time, procs_map[curr_proc][0]
 
@@ -126,19 +126,19 @@ def RR(procsList, timeSlice, f):
         completed_proc.sort()
         ready_queue += completed_proc
         for proc in completed_proc:
-            if time <= 1000:
+            if time <= PRINT_UNTIL:
                 print(
                     f'time {time}ms: Process {proc} '
                     f'completed I/O; added to ready queue',
-                    print_ready_Q(ready_queue))
+                    printReadyQueue(ready_queue))
 
         # check if there is a process coming at this time
         if time in arrival_time_map.keys():
             ready_queue.append(arrival_time_map[time][0])
-            if time <= 1000:
+            if time <= PRINT_UNTIL:
                 print(
                     f'time {time}ms: Process {arrival_time_map[time][0]} arrived; '
-                    f'added to ready queue', print_ready_Q(ready_queue))
+                    f'added to ready queue', printReadyQueue(ready_queue))
 
         # no process is running and there is at least one ready process
         if not running[0] and len(ready_queue) > 0:

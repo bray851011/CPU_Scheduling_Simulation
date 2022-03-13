@@ -4,7 +4,7 @@ The SRT algorithm is a preemptive version of the SJF algorithm. In SRT, when a p
 '''
 
 import math
-from helpers import print_ready_Q, writeData
+from helpers import PRINT_UNTIL, printReadyQueue, writeData
 
 def SRT(procsList, f, alpha):
 
@@ -53,12 +53,12 @@ def SRT(procsList, f, alpha):
                 cpu_burst_time[0] += running[2] - running[1]
                 useful_time += running[2] - running[1]
                 cpu_burst_time[1] += 1
-                if time <= 1000:
+                if time <= PRINT_UNTIL:
                     print(
                         f'time {time}ms: Process {procs_map[running[3]][0]} '
                         f'(tau {procs_map[running[3]][5]}ms) started using the CPU '
                         f'for {running[2] - running[1]}ms burst',
-                        print_ready_Q(ready_queue))
+                        printReadyQueue(ready_queue))
 
         # end running a process -- time == end time of the process
         if running[0]:
@@ -68,24 +68,24 @@ def SRT(procsList, f, alpha):
                 # check if the process reaches the end -- cpu burst time list is empty
                 if len(procs_map[running[3]][3]) == 0:
                     print(f'time {time}ms: Process {running[3]} terminated',
-                          print_ready_Q(ready_queue))
+                          printReadyQueue(ready_queue))
                     del procs_map[running[3]]
                 else:
-                    if time <= 1000:
+                    if time <= PRINT_UNTIL:
                         if procs_map[running[3]][2] > 1:
                             print(
                                 f'time {time}ms: Process {procs_map[running[3]][0]} '
                                 f'(tau {procs_map[running[3]][5]}ms) '
                                 f'completed a CPU burst; '
                                 f'{procs_map[running[3]][2]} bursts to go',
-                                print_ready_Q(ready_queue))
+                                printReadyQueue(ready_queue))
                         else:
                             print(
                                 f'time {time}ms: Process {procs_map[running[3]][0]} '
                                 f'(tau {procs_map[running[3]][5]}ms) '
                                 f'completed a CPU burst; '
                                 f'{procs_map[running[3]][2]} burst to go',
-                                print_ready_Q(ready_queue))
+                                printReadyQueue(ready_queue))
                     block_time = procs_map[running[3]][4][0] + 2
 
                     procs_map[running[3]][4].pop(0)
@@ -93,20 +93,20 @@ def SRT(procsList, f, alpha):
                     # update tau <- alpha * burst time + (1 - alpha) * tau
                     tau = math.ceil(alpha * (running[2] - running[1]) +
                                     (1 - alpha) * procs_map[running[3]][5])
-                    if time <= 1000:
+                    if time <= PRINT_UNTIL:
                         print(
                             f'time {time}ms: Recalculated tau from '
                             f'{procs_map[running[3]][5]}ms to {tau}ms '
                             f'for process {procs_map[running[3]][0]}',
-                            print_ready_Q(ready_queue))
+                            printReadyQueue(ready_queue))
                     procs_map[running[3]][5] = tau
 
-                    if time <= 1000:
+                    if time <= PRINT_UNTIL:
                         print(
                             f'time {time}ms: Process {procs_map[running[3]][0]} '
                             f'switching out of CPU; will block on I/O '
                             f'until time {time + block_time}ms',
-                            print_ready_Q(ready_queue))
+                            printReadyQueue(ready_queue))
                     block_map[procs_map[running[3]][0]] = \
                         time + block_time, procs_map[running[3]][0]
 
@@ -119,21 +119,21 @@ def SRT(procsList, f, alpha):
             if time == v[0]:
                 ready_queue.append(v[1])
                 ready_queue.sort(key=lambda x: (procs_map[x][5], x))
-                if time <= 1000:
+                if time <= PRINT_UNTIL:
                     print(
                         f'time {time}ms: Process {v[1]} (tau {procs_map[v[1]][5]}ms) '
                         f'completed I/O; added to ready queue',
-                        print_ready_Q(ready_queue))
+                        printReadyQueue(ready_queue))
 
         # check if there is a process coming at this time
         if time in arrival_time_map.keys():
             ready_queue.append(arrival_time_map[time][0])
             ready_queue.sort(key=lambda x: (procs_map[x][5], x))
-            if time <= 1000:
+            if time <= PRINT_UNTIL:
                 print(
                     f'time {time}ms: Process {arrival_time_map[time][0]} '
                     f'(tau {arrival_time_map[time][5]}ms) arrived; '
-                    f'added to ready queue', print_ready_Q(ready_queue))
+                    f'added to ready queue', printReadyQueue(ready_queue))
 
         # no process is running and there is at least one ready process
         if not running[0] and len(ready_queue) > 0:
