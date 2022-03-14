@@ -66,7 +66,6 @@ if __name__ == "__main__":
     # argv[6], alpha -- constant for SJF and SRT algorithms
     # argv[7], timeSlice -- time slice for RR algorithm
 
-    # if there is a type error, throw Value Error
     try:
         numProcesses = int(sys.argv[1])
         seed = int(sys.argv[2])
@@ -76,7 +75,7 @@ if __name__ == "__main__":
         alpha = float(sys.argv[6])
         timeSlice = int(sys.argv[7])
     except ValueError:
-        print("There was a type error!")
+        print("ERROR: There was a type error!")
         exit()
 
     TAU = int(1 / lam)
@@ -86,70 +85,53 @@ if __name__ == "__main__":
     threadsList = []
 
     for i in range(numProcesses):
-        randList = []
+        CPUBurstTimes = []
+        IOBurstTimes = []
 
-        # flag -- track the total valid random number we expect
-        flag = 2
-        while len(randList) < flag:
+        # Get arrival time
+        while True:
+            arrivalTime = math.floor(-math.log(rand.drand48()) / lam)
+            if arrivalTime <= expDstUpperBound:
+                break
 
-            r = rand.drand48()
+        # Get number of CPU bursts
+        while True:
+            numCPUBursts = math.ceil(rand.drand48() * 100)
+            if numCPUBursts <= expDstUpperBound:
+                break
+        
+        while len(CPUBurstTimes) < numCPUBursts:
 
-            # arrival time
-            if len(randList) == 0:
-                r = math.floor(-math.log(r) / lam)
+            # CPU burst time
+            while True:
+                CPUBurstTime = math.ceil(-math.log(rand.drand48()) / lam)
+                if CPUBurstTime <= expDstUpperBound:
+                    break
+            CPUBurstTimes.append(CPUBurstTime)
 
-                if r > expDstUpperBound:
-                    continue
-
-            # number of CPU bursts
-            elif len(randList) == 1:
-                r = math.ceil(r * 100)
-                if r > expDstUpperBound:
-                    continue
-                else:
-                    flag = 2 + r
-
-            # CPU burst time and I/O burst time
+            # If this is the last CPU burst, don't make an I/O burst
+            if len(CPUBurstTimes) == numCPUBursts:
+                break
             else:
-                # CPU burst time
-                r1 = math.ceil(-math.log(r) / lam)
-                if r1 > expDstUpperBound:
-                    continue
-
-                # This is the last CPU burst, so we do not generate I/O burst time
-                if len(randList) == flag - 1:
-                    r = r1
-                else:
-                    # I/O burst time
-                    while True:
-                        r = rand.drand48()
-                        r2 = math.ceil(-math.log(r) / lam)
-                        if r2 <= expDstUpperBound:
-                            break
-                    r = r1, 10 * r2
-
-            randList.append(r)
+                # I/O burst time
+                while True:
+                    IOBurstTime = math.ceil(-math.log(rand.drand48()) / lam)
+                    if IOBurstTime <= expDstUpperBound:
+                        break
+                IOBurstTimes.append(10 * IOBurstTime)
 
         # gather info for the thread
         threadName = str(chr(i + 65))
-        arrivalTime = randList[0]
-        CPUBursts = randList[1]
-        CPUBurstTime = [item[0] for item in randList[2:-1]] + [randList[-1]]
-        # print("CPU Burst Time: ", CPUBurstTime)
-        IOBurstTime = [item[1] for item in randList[2:-1]]
-        # printBurstTimes(CPUBurstTime, IOBurstTime)
 
         # construct thread object
-        threadsList.append(Thread(threadName, arrivalTime, CPUBursts,
-                                  CPUBurstTime, IOBurstTime, TAU))
+        threadsList.append(Thread(threadName, arrivalTime, numCPUBursts,
+                                  CPUBurstTimes, IOBurstTimes, TAU))
 
-        if CPUBursts > 1:
-            print(f'Process {threadName} (arrival time {arrivalTime} ms) '
-                  f'{CPUBursts} CPU bursts (tau {int(1 / lam)}ms)')
-        else:
-            print(f'Process {threadName} (arrival time {arrivalTime} ms) '
-                  f'{CPUBursts} CPU burst (tau {int(1 / lam)}ms)')
-        printBurstTimes(CPUBurstTime, IOBurstTime)
+        print(f'Process {threadName} (arrival time {arrivalTime} ms) '
+                  f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
+                  f'(tau {int(1 / lam)}ms)')
+        printBurstTimes(CPUBurstTimes, IOBurstTimes)
+    
     print()
 
     output = open("simout.txt", "a+")
