@@ -7,6 +7,7 @@ from RoundRobin import RR
 from ShortestJobFirst import SJF
 from ShortestRemainingTime import SRT
 
+
 class Rand48(object):
     
     def drand48(self):
@@ -15,7 +16,6 @@ class Rand48(object):
 
     def srand48(self, seedval):
         self.Xn = (seedval << 16) + 0x330E
-
 
 
 class Thread:
@@ -38,10 +38,55 @@ class Thread:
         return self.threadName, self.arrivalTime, self.CPUBursts, self.CPUBurstTime, self.IOBurstTime, self.tau
 
 
-
 def next_exp():
-    pass
 
+    rand = Rand48()
+    rand.srand48(seed)
+
+    for i in range(numProcesses):
+
+        # name the process(A through Z)
+        processName = str(chr(i + 65))
+
+        # Get arrival time and number of CPU bursts
+        arrivalTime = numCPUBursts = -1
+        while True:
+            if arrivalTime == -1 or arrivalTime > expDstUpperBound:
+                arrivalTime = math.floor(-math.log(rand.drand48()) / lam)
+            if numCPUBursts == -1 or numCPUBursts > expDstUpperBound:
+                numCPUBursts = math.ceil(rand.drand48() * 100)
+            if arrivalTime <= expDstUpperBound and numCPUBursts <= expDstUpperBound:
+                break
+
+        # Get CPU burst time and I/O burst time
+        CPUBurstTimes = []
+        IOBurstTimes = []
+        while len(CPUBurstTimes) < numCPUBursts:
+
+            # CPU burst time and I/O burst time
+            CPUBurstTime = IOBurstTime = -1
+            while True:
+                if CPUBurstTime == -1 or CPUBurstTime > expDstUpperBound:
+                    CPUBurstTime = math.ceil(-math.log(rand.drand48()) / lam)
+                if IOBurstTime == - 1 or IOBurstTime > expDstUpperBound:
+                    IOBurstTime = math.ceil(-math.log(rand.drand48()) / lam)
+                if CPUBurstTime <= expDstUpperBound and IOBurstTime <= expDstUpperBound:
+                    CPUBurstTimes.append(CPUBurstTime)
+                    if len(CPUBurstTimes) != numCPUBursts:
+                        IOBurstTimes.append(10 * IOBurstTime)
+                    break
+
+        # construct thread object
+        processesList = []
+        processesList.append(Thread(processName, arrivalTime, numCPUBursts, CPUBurstTimes, IOBurstTimes, int(1 / lam)))
+
+        print(f'Process {processName} (arrival time {arrivalTime} ms) '
+              f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
+              f'(tau {int(1 / lam)}ms)')
+
+        printBurstTimes(CPUBurstTimes, IOBurstTimes)
+
+    return processesList
 
 
 def printBurstTimes(CPUBurstTimes, IOBurstTimes):
@@ -53,7 +98,6 @@ def printBurstTimes(CPUBurstTimes, IOBurstTimes):
             print(f" --> I/O burst {IOBurstTimes[i]} ms")
         else:
             print()
-
 
 
 if __name__ == "__main__":
@@ -78,69 +122,17 @@ if __name__ == "__main__":
         print("ERROR: There was a type error!")
         exit()
 
-    TAU = int(1 / lam)
+    processesList = next_exp()
 
-    rand = Rand48()
-    rand.srand48(seed)
-    threadsList = []
-
-    for i in range(numProcesses):
-        CPUBurstTimes = []
-        IOBurstTimes = []
-
-        # Get arrival time
-        while True:
-            arrivalTime = math.floor(-math.log(rand.drand48()) / lam)
-            if arrivalTime <= expDstUpperBound:
-                break
-
-        # Get number of CPU bursts
-        while True:
-            numCPUBursts = math.ceil(rand.drand48() * 100)
-            if numCPUBursts <= expDstUpperBound:
-                break
-        
-        while len(CPUBurstTimes) < numCPUBursts:
-
-            # CPU burst time
-            while True:
-                CPUBurstTime = math.ceil(-math.log(rand.drand48()) / lam)
-                if CPUBurstTime <= expDstUpperBound:
-                    break
-            CPUBurstTimes.append(CPUBurstTime)
-
-            # If this is the last CPU burst, don't make an I/O burst
-            if len(CPUBurstTimes) == numCPUBursts:
-                break
-            else:
-                # I/O burst time
-                while True:
-                    IOBurstTime = math.ceil(-math.log(rand.drand48()) / lam)
-                    if IOBurstTime <= expDstUpperBound:
-                        break
-                IOBurstTimes.append(10 * IOBurstTime)
-
-        # gather info for the thread
-        threadName = str(chr(i + 65))
-
-        # construct thread object
-        threadsList.append(Thread(threadName, arrivalTime, numCPUBursts,
-                                  CPUBurstTimes, IOBurstTimes, TAU))
-
-        print(f'Process {threadName} (arrival time {arrivalTime} ms) '
-                  f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
-                  f'(tau {int(1 / lam)}ms)')
-        printBurstTimes(CPUBurstTimes, IOBurstTimes)
-    
     print()
 
     output = open("simout.txt", "a+")
     output.truncate(0)
 
-    FCFS(copy.deepcopy(threadsList), output)
+    FCFS(copy.deepcopy(processesList), output)
     print()
-    SJF(copy.deepcopy(threadsList), output, alpha)
+    SJF(copy.deepcopy(processesList), output, alpha)
     print()
-    SRT(copy.deepcopy(threadsList), output, alpha)
+    SRT(copy.deepcopy(processesList), output, alpha)
     print()
-    RR(copy.deepcopy(threadsList), output, timeSlice)
+    RR(copy.deepcopy(processesList), output, timeSlice)

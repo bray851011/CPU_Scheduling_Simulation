@@ -1,5 +1,5 @@
-
 PRINT_UNTIL = 1000
+
 
 def printReadyQueue(ready_queue):
     res = '[Q '
@@ -10,7 +10,6 @@ def printReadyQueue(ready_queue):
             res += item
         res = res + ']'
     return res
-
 
 
 def writeData(f, algo, data):

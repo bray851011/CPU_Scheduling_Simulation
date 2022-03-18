@@ -1,4 +1,3 @@
-
 '''
 The FCFS algorithm is a non-preemptive algorithm in which processes simply line up in the ready
 queue, waiting to use the CPU. This is your baseline algorithm (and could be implemented as RR
@@ -7,10 +6,11 @@ with an “inﬁnite” time slice).
 
 from helpers import printReadyQueue, writeData, PRINT_UNTIL
 
+
 def FCFS(procsList, f):
 
     numContextSwitches = 0
-    cpu_burst_time = [0,0]
+    cpu_burst_time = [0, 0]
     wait_time = 0
     useful_time = 0
 
