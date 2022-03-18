@@ -18,26 +18,36 @@ class Rand48(object):
 
 
 
-class Thread:
+class Process:
     
-    def __init__(self, threadName, arrivalTime, CPUBursts, CPUBurstTime, IOBurstTime, tau):
-        self.threadName = threadName
+    def __init__(self, processName, arrivalTime, CPUBursts, CPUBurstTime, IOBurstTime, tau):
+        self.processName = processName
         self.arrivalTime = arrivalTime
         self.CPUBursts = CPUBursts
         self.CPUBurstTime = CPUBurstTime
         self.IOBurstTime = IOBurstTime
         self.tau = tau
 
-    def set(self, CPUBursts, CPUBurstTime, IOBurstTime, tau):
-        self.CPUBursts = CPUBursts
-        self.CPUBurstTime = CPUBurstTime
-        self.IOBurstTime = IOBurstTime
-        self.tau = tau
-
     def get(self):
-        return self.threadName, self.arrivalTime, self.CPUBursts, self.CPUBurstTime, self.IOBurstTime, self.tau
+        return self.processName, self.arrivalTime, self.CPUBursts, self.CPUBurstTime, self.IOBurstTime, self.tau
 
+    def getName(self):
+        return self.processName
 
+    def getArrivalTime(self):
+        return self.arrivalTime
+    
+    def getCPUBursts(self):
+        return self.CPUBursts
+    
+    def getCPUBurstTime(self):
+        return self.CPUBurstTime
+    
+    def getIOBurstTime(self):
+        return self.IOBurstTime
+    
+    def getTau(self):
+        return self.tau
 
 def next_exp():
     pass
@@ -82,7 +92,7 @@ if __name__ == "__main__":
 
     rand = Rand48()
     rand.srand48(seed)
-    threadsList = []
+    processList = []
 
     for i in range(numProcesses):
         CPUBurstTimes = []
@@ -121,15 +131,15 @@ if __name__ == "__main__":
                 IOBurstTimes.append(10 * IOBurstTime)
 
         # gather info for the thread
-        threadName = str(chr(i + 65))
+        processName = str(chr(i + 65))
 
         # construct thread object
-        threadsList.append(Thread(threadName, arrivalTime, numCPUBursts,
+        processList.append(Process(processName, arrivalTime, numCPUBursts,
                                   CPUBurstTimes, IOBurstTimes, TAU))
 
-        print(f'Process {threadName} (arrival time {arrivalTime} ms) '
+        print(f'Process {processName} (arrival time {arrivalTime} ms) '
                   f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
-                  f'(tau {int(1 / lam)}ms)')
+                  f'(tau {TAU}ms)')
         printBurstTimes(CPUBurstTimes, IOBurstTimes)
     
     print()
@@ -137,10 +147,10 @@ if __name__ == "__main__":
     output = open("simout.txt", "a+")
     output.truncate(0)
 
-    FCFS(copy.deepcopy(threadsList), output)
+    FCFS(copy.deepcopy(processList), output)
     print()
-    SJF(copy.deepcopy(threadsList), output, alpha)
+    SJF(copy.deepcopy(processList), output, alpha)
     print()
-    SRT(copy.deepcopy(threadsList), output, alpha)
+    SRT(copy.deepcopy(processList), output, alpha)
     print()
-    RR(copy.deepcopy(threadsList), output, timeSlice)
+    RR(copy.deepcopy(processList), output, timeSlice)
