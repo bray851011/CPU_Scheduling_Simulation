@@ -18,24 +18,37 @@ class Rand48(object):
         self.Xn = (seedval << 16) + 0x330E
 
 
-class Thread:
+class Process:
     
-    def __init__(self, threadName, arrivalTime, CPUBursts, CPUBurstTime, IOBurstTime, tau):
-        self.threadName = threadName
+    def __init__(self, processName, arrivalTime, CPUBursts, CPUBurstTime, IOBurstTime, tau):
+        self.processName = processName
         self.arrivalTime = arrivalTime
         self.CPUBursts = CPUBursts
         self.CPUBurstTime = CPUBurstTime
         self.IOBurstTime = IOBurstTime
         self.tau = tau
 
-    def set(self, CPUBursts, CPUBurstTime, IOBurstTime, tau):
-        self.CPUBursts = CPUBursts
-        self.CPUBurstTime = CPUBurstTime
-        self.IOBurstTime = IOBurstTime
-        self.tau = tau
-
     def get(self):
-        return self.threadName, self.arrivalTime, self.CPUBursts, self.CPUBurstTime, self.IOBurstTime, self.tau
+        return self.processName, self.arrivalTime, self.CPUBursts, self.CPUBurstTime, self.IOBurstTime, self.tau
+
+    def getName(self):
+        return self.processName
+
+
+    def getArrivalTime(self):
+        return self.arrivalTime
+    
+    def getCPUBursts(self):
+        return self.CPUBursts
+    
+    def getCPUBurstTime(self):
+        return self.CPUBurstTime
+    
+    def getIOBurstTime(self):
+        return self.IOBurstTime
+    
+    def getTau(self):
+        return self.tau
 
 
 def next_exp():
@@ -78,7 +91,7 @@ def next_exp():
 
         # construct thread object
         processesList = []
-        processesList.append(Thread(processName, arrivalTime, numCPUBursts, CPUBurstTimes, IOBurstTimes, int(1 / lam)))
+        processesList.append(Process(processName, arrivalTime, numCPUBursts, CPUBurstTimes, IOBurstTimes, int(1 / lam)))
 
         print(f'Process {processName} (arrival time {arrivalTime} ms) '
               f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
@@ -136,3 +149,4 @@ if __name__ == "__main__":
     SRT(copy.deepcopy(processesList), output, alpha)
     print()
     RR(copy.deepcopy(processesList), output, timeSlice)
+

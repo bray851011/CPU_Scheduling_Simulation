@@ -4,25 +4,25 @@ The SRT algorithm is a preemptive version of the SJF algorithm. In SRT, when a p
 '''
 
 import math
-from helpers import PRINT_UNTIL, printReadyQueue, writeData
+from helpers import DISPLAY_MAX_T, printReadyQueue, writeData
 
 def SRT(procsList, f, alpha):
 
     # analysis variable
-    count_context_switch = 0
+    numContextSwitches = 0
     cpu_burst_time = [0, 0]
-    wait_time = 0
+    waitTime = 0
     useful_time = 0
-    count_preemptions = 0
+    numPreemptions = 0
 
     print("time 0ms: Simulator started for SRT [Q empty]")
 
     arrival_time_map = {}
-    procs_map = {}
-    ready_queue = []
+    processes = {}
+    readyQueue = []
     for thread in procsList:
         arrival_time_map[thread.get()[1]] = thread.get()
-        procs_map[thread.get()[0]] = [*thread.get()]
+        processes[thread.get()[0]] = [*thread.get()]
 
     time = 0
 
@@ -37,12 +37,12 @@ def SRT(procsList, f, alpha):
 
     while True:
 
-        old_read_queue = ready_queue
+        old_read_queue = readyQueue
 
         curr_proc = ''
 
         # no processes left
-        if len(procs_map.keys()) == 0:
+        if len(processes.keys()) == 0:
             print(f"time {time + 1}ms: Simulator ended for SRT [Q empty]")
             break
 
@@ -53,12 +53,12 @@ def SRT(procsList, f, alpha):
                 cpu_burst_time[0] += running[2] - running[1]
                 useful_time += running[2] - running[1]
                 cpu_burst_time[1] += 1
-                if time <= PRINT_UNTIL:
+                if time <= DISPLAY_MAX_T:
                     print(
-                        f'time {time}ms: Process {procs_map[running[3]][0]} '
-                        f'(tau {procs_map[running[3]][5]}ms) started using the CPU '
+                        f'time {time}ms: Process {processes[running[3]][0]} '
+                        f'(tau {processes[running[3]][5]}ms) started using the CPU '
                         f'for {running[2] - running[1]}ms burst',
-                        printReadyQueue(ready_queue))
+                        printReadyQueue(readyQueue))
 
         # end running a process -- time == end time of the process
         if running[0]:
@@ -66,49 +66,49 @@ def SRT(procsList, f, alpha):
                 curr_proc = running[3]
 
                 # check if the process reaches the end -- cpu burst time list is empty
-                if len(procs_map[running[3]][3]) == 0:
+                if len(processes[running[3]][3]) == 0:
                     print(f'time {time}ms: Process {running[3]} terminated',
-                          printReadyQueue(ready_queue))
-                    del procs_map[running[3]]
+                          printReadyQueue(readyQueue))
+                    del processes[running[3]]
                 else:
-                    if time <= PRINT_UNTIL:
-                        if procs_map[running[3]][2] > 1:
+                    if time <= DISPLAY_MAX_T:
+                        if processes[running[3]][2] > 1:
                             print(
-                                f'time {time}ms: Process {procs_map[running[3]][0]} '
-                                f'(tau {procs_map[running[3]][5]}ms) '
+                                f'time {time}ms: Process {processes[running[3]][0]} '
+                                f'(tau {processes[running[3]][5]}ms) '
                                 f'completed a CPU burst; '
-                                f'{procs_map[running[3]][2]} bursts to go',
-                                printReadyQueue(ready_queue))
+                                f'{processes[running[3]][2]} bursts to go',
+                                printReadyQueue(readyQueue))
                         else:
                             print(
-                                f'time {time}ms: Process {procs_map[running[3]][0]} '
-                                f'(tau {procs_map[running[3]][5]}ms) '
+                                f'time {time}ms: Process {processes[running[3]][0]} '
+                                f'(tau {processes[running[3]][5]}ms) '
                                 f'completed a CPU burst; '
-                                f'{procs_map[running[3]][2]} burst to go',
-                                printReadyQueue(ready_queue))
-                    block_time = procs_map[running[3]][4][0] + 2
+                                f'{processes[running[3]][2]} burst to go',
+                                printReadyQueue(readyQueue))
+                    block_time = processes[running[3]][4][0] + 2
 
-                    procs_map[running[3]][4].pop(0)
+                    processes[running[3]][4].pop(0)
 
                     # update tau <- alpha * burst time + (1 - alpha) * tau
                     tau = math.ceil(alpha * (running[2] - running[1]) +
-                                    (1 - alpha) * procs_map[running[3]][5])
-                    if time <= PRINT_UNTIL:
+                                    (1 - alpha) * processes[running[3]][5])
+                    if time <= DISPLAY_MAX_T:
                         print(
                             f'time {time}ms: Recalculated tau from '
-                            f'{procs_map[running[3]][5]}ms to {tau}ms '
-                            f'for process {procs_map[running[3]][0]}',
-                            printReadyQueue(ready_queue))
-                    procs_map[running[3]][5] = tau
+                            f'{processes[running[3]][5]}ms to {tau}ms '
+                            f'for process {processes[running[3]][0]}',
+                            printReadyQueue(readyQueue))
+                    processes[running[3]][5] = tau
 
-                    if time <= PRINT_UNTIL:
+                    if time <= DISPLAY_MAX_T:
                         print(
-                            f'time {time}ms: Process {procs_map[running[3]][0]} '
+                            f'time {time}ms: Process {processes[running[3]][0]} '
                             f'switching out of CPU; will block on I/O '
                             f'until time {time + block_time}ms',
-                            printReadyQueue(ready_queue))
-                    block_map[procs_map[running[3]][0]] = \
-                        time + block_time, procs_map[running[3]][0]
+                            printReadyQueue(readyQueue))
+                    block_map[processes[running[3]][0]] = \
+                        time + block_time, processes[running[3]][0]
 
         # wait for another 2ms for cpu to be reused
         if running[0]:
@@ -117,51 +117,51 @@ def SRT(procsList, f, alpha):
 
         for v in block_map.values():
             if time == v[0]:
-                ready_queue.append(v[1])
-                ready_queue.sort(key=lambda x: (procs_map[x][5], x))
-                if time <= PRINT_UNTIL:
+                readyQueue.append(v[1])
+                readyQueue.sort(key=lambda x: (processes[x][5], x))
+                if time <= DISPLAY_MAX_T:
                     print(
-                        f'time {time}ms: Process {v[1]} (tau {procs_map[v[1]][5]}ms) '
+                        f'time {time}ms: Process {v[1]} (tau {processes[v[1]][5]}ms) '
                         f'completed I/O; added to ready queue',
-                        printReadyQueue(ready_queue))
+                        printReadyQueue(readyQueue))
 
         # check if there is a process coming at this time
         if time in arrival_time_map.keys():
-            ready_queue.append(arrival_time_map[time][0])
-            ready_queue.sort(key=lambda x: (procs_map[x][5], x))
-            if time <= PRINT_UNTIL:
+            readyQueue.append(arrival_time_map[time][0])
+            readyQueue.sort(key=lambda x: (processes[x][5], x))
+            if time <= DISPLAY_MAX_T:
                 print(
                     f'time {time}ms: Process {arrival_time_map[time][0]} '
                     f'(tau {arrival_time_map[time][5]}ms) arrived; '
-                    f'added to ready queue', printReadyQueue(ready_queue))
+                    f'added to ready queue', printReadyQueue(readyQueue))
 
         # no process is running and there is at least one ready process
-        if not running[0] and len(ready_queue) > 0:
-            next_proc = ready_queue[0]
-            ready_queue.pop(0)
+        if not running[0] and len(readyQueue) > 0:
+            next_proc = readyQueue[0]
+            readyQueue.pop(0)
             running[0] = True
             running[1] = time + 2  # start
-            running[2] = time + procs_map[next_proc][3][0] + 2  # end
-            procs_map[next_proc][3].pop(0)
-            procs_map[next_proc][2] -= 1
+            running[2] = time + processes[next_proc][3][0] + 2  # end
+            processes[next_proc][3].pop(0)
+            processes[next_proc][2] -= 1
             running[3] = next_proc
 
             # context switch
-            count_context_switch += 1
+            numContextSwitches += 1
 
             if curr_proc != '' and next_proc != curr_proc:
                 running[1] += 2
                 running[2] += 2
 
-        for p in set(old_read_queue).intersection(ready_queue):
-            wait_time += 1
+        for p in set(old_read_queue).intersection(readyQueue):
+            waitTime += 1
 
         time += 1
 
-    average_cpu_burst_time = cpu_burst_time[0] / cpu_burst_time[1]
-    average_wait_time = wait_time / sum([p.get()[2] for p in procsList])
-    average_turnaround_time = average_cpu_burst_time + average_wait_time + 4
-    CPU_utilization = round(100 * useful_time / (time + 1), 3)
+    avgCPUBurstTime = cpu_burst_time[0] / cpu_burst_time[1]
+    avgWaitTime = waitTime / sum([p.get()[2] for p in procsList])
+    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
+    CPUUtilization = round(100 * useful_time / (time + 1), 3)
 
-    data = average_cpu_burst_time, average_wait_time, average_turnaround_time, count_context_switch, count_preemptions, CPU_utilization
+    data = avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions, CPUUtilization
     writeData(f, "SRT", data)
