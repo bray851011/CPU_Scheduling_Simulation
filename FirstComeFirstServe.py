@@ -9,13 +9,14 @@ from helpers import *
 
 def FCFS(processList, f):
 
+    algo = "FCFS"
     numContextSwitches = 0
     CPUBurstStart = 0
     CPUBurstEnd = 0
     waitTime = 0
     useful_time = 0
 
-    print("time 0ms: Simulator started for FCFS [Q empty]")
+    printStartSimulator(algo)
 
     arrivalTimeDict = {}
     processes = {}
@@ -32,53 +33,37 @@ def FCFS(processList, f):
     while True:
 
         prevReadyQueue = readyQueue
-
         currentProcess = ''
 
         # If there are no processes left, then simulator is done
         if not processes:
-            print(f"time {time + 1}ms: Simulator ended for FCFS [Q empty]")
+            printEndSimulator(time + 1, algo)
             break
 
         # print changes to the process
         if usingCPU:
             if time == runningStart:
-                runningTime = runningEnd - runningStart
-                CPUBurstStart += runningTime
-                useful_time += runningTime
+                burstTime = runningEnd - runningStart
+                CPUBurstStart += burstTime
+                useful_time += burstTime
                 CPUBurstEnd += 1
-                if time <= DISPLAY_MAX_T:
-                    print(
-                        f'time {time}ms: Process {processes[runningProcess].getName()} '
-                        f'started using the CPU for {runningTime}ms burst',
-                        printReadyQueue(readyQueue))
+                printStartCPU(time, runningProcess, -1, burstTime, readyQueue)
 
         if usingCPU:
             if time == runningEnd:
                 currentProcess = runningProcess
 
                 if len(processes[currentProcess].getCPUBurstTimes()) == 0:
-                    print(f'time {time}ms: Process {currentProcess} terminated',
-                          printReadyQueue(readyQueue))
+                    printProcessTerminated(time, currentProcess, readyQueue)
                     del processes[currentProcess]
                 else:
-                    if time <= DISPLAY_MAX_T:
-                            print(
-                                f'time {time}ms: Process {processes[currentProcess].getName()} '
-                                f'completed a CPU burst; '
-                                f'{processes[currentProcess].getNumCPUBursts()} '
-                                f'burst{"s" if processes[currentProcess].getNumCPUBursts() > 1 else ""} to go',
-                                printReadyQueue(readyQueue))
+                    printCPUComplete(time, currentProcess, -1, processes[currentProcess].getNumCPUBursts(), readyQueue)
+
                     blockTime = processes[currentProcess].popNextIOBurstTime() + 2
 
-                    if time <= DISPLAY_MAX_T:
-                        print(
-                            f'time {time}ms: Process {processes[currentProcess].getName()} '
-                            f'switching out of CPU; will block on I/O '
-                            f'until time {time + blockTime}ms',
-                            printReadyQueue(readyQueue))
-                    blockDict[currentProcess] = \
-                        time + blockTime, currentProcess
+                    printIOBlock(time, currentProcess, time + blockTime, readyQueue)
+
+                    blockDict[currentProcess] = time + blockTime, currentProcess
 
         if usingCPU:
             if time == runningEnd + 2:
@@ -94,11 +79,7 @@ def FCFS(processList, f):
         doneProcesses.sort()
         readyQueue += doneProcesses
         for proc in doneProcesses:
-            if time <= DISPLAY_MAX_T:
-                print(
-                    f'time {time}ms: Process {proc} '
-                    f'completed I/O; added to ready queue',
-                    printReadyQueue(readyQueue))
+            printIOComplete(time, proc, -1, readyQueue)
 
         # check if there is a process coming at this time
         if time in arrivalTimeDict.keys():
@@ -120,9 +101,7 @@ def FCFS(processList, f):
                 runningStart += 2
                 runningEnd += 2
 
-        for p in prevReadyQueue:
-            if p in readyQueue:
-                waitTime += 1
+        waitTime += addWaitTime(prevReadyQueue, readyQueue)
 
         time += 1
 
@@ -131,5 +110,4 @@ def FCFS(processList, f):
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
     CPUUtilization = round( 100 * useful_time / (time+1), 3)
 
-    data = avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization
-    writeData(f, "FCFS", data)
+    writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization)
