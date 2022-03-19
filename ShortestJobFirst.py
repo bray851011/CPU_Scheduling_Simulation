@@ -6,9 +6,10 @@ selected as the next process executed by the CPU.
 '''
 
 import math
+import copy
 from helpers import printReadyQueue, writeData, DISPLAY_MAX_T
 
-def SJF(procsList, f, alpha):
+def SJF(processList, f, alpha):
 
     # analysis variable
     numContextSwitches = 0
@@ -18,12 +19,14 @@ def SJF(procsList, f, alpha):
 
     print("time 0ms: Simulator started for SJF [Q empty]")
 
-    arrival_time_map = {}
+    arrivalTimeDict = {}
     processes = {}
     readyQueue = []
-    for thread in procsList:
-        arrival_time_map[thread.get()[1]] = thread.get()
-        processes[thread.get()[0]] = [*thread.get()]
+    for process in processList:
+        arrivalTimeDict[process.getArrivalTime()] = copy.deepcopy(list(process.get()))
+        processes[process.getName()] = copy.deepcopy(list(process.get()))
+        # arrivalTimeDict[process.get()[1]] = process.get()
+        # processes[process.get()[0]] = [*process.get()]
 
     time = 0
 
@@ -31,93 +34,87 @@ def SJF(procsList, f, alpha):
     # running[1] -- if running[0], then this represents the start time of this running
     # running[2] -- if running[0], then this represents the end time of this running
     # running[3] -- if running[0], then this represents the process name of this running
-    running = [False, '', '', '']
+    CPUstatus = [False, '', '', '']
 
     # when a process is blocked, add to this map with its time
-    block_map = {}
+    blockDict = {}
 
+    # main SJF process starts here
     while True:
 
         old_read_queue = readyQueue
 
         curr_proc = ''
 
-        # no processes left
-        if len(processes.keys()) == 0:
-            print(f"time {time + 1}ms: Simulator ended for SJF [Q empty]")
-            break
-
-        # start running a process -- time == start time of the process
-        if running[0]:
-            if time == running[1]:
-                curr_proc = running[3]
-                cpu_burst_time[0] += running[2] - running[1]
-                useful_time += running[2] - running[1]
+        # CPU being used
+        if CPUstatus[0]:
+            # time == start time of the process
+            if time == CPUstatus[1]:
+                curr_proc = CPUstatus[3]
+                cpu_burst_time[0] += CPUstatus[2] - CPUstatus[1]
+                useful_time += CPUstatus[2] - CPUstatus[1]
                 cpu_burst_time[1] += 1
                 if time <= DISPLAY_MAX_T:
                     print(
-                        f'time {time}ms: Process {processes[running[3]][0]} '
-                        f'(tau {processes[running[3]][5]}ms) started using the CPU '
-                        f'for {running[2] - running[1]}ms burst',
+                        f'time {time}ms: Process {processes[CPUstatus[3]][0]} '
+                        f'(tau {processes[CPUstatus[3]][5]}ms) started using the CPU '
+                        f'for {CPUstatus[2] - CPUstatus[1]}ms burst',
                         printReadyQueue(readyQueue))
-
-        # end running a process -- time == end time of the process
-        if running[0]:
-            if time == running[2]:
-                curr_proc = running[3]
+            # time == end time of the process
+            if time == CPUstatus[2]:
+                curr_proc = CPUstatus[3]
 
                 # check if the process reaches the end -- cpu burst time list is empty
-                if len(processes[running[3]][3]) == 0:
-                    print(f'time {time}ms: Process {running[3]} terminated',
+                if len(processes[CPUstatus[3]][3]) == 0:
+                    print(f'time {time}ms: Process {CPUstatus[3]} terminated',
                           printReadyQueue(readyQueue))
-                    del processes[running[3]]
+                    del processes[CPUstatus[3]]
                 else:
-                    if processes[running[3]][2] > 1:
+                    if processes[CPUstatus[3]][2] > 1:
                         if time <= DISPLAY_MAX_T:
                             print(
-                                f'time {time}ms: Process {processes[running[3]][0]} '
-                                f'(tau {processes[running[3]][5]}ms) '
+                                f'time {time}ms: Process {processes[CPUstatus[3]][0]} '
+                                f'(tau {processes[CPUstatus[3]][5]}ms) '
                                 f'completed a CPU burst; '
-                                f'{processes[running[3]][2]} bursts to go',
+                                f'{processes[CPUstatus[3]][2]} bursts to go',
                                 printReadyQueue(readyQueue))
                     else:
                         if time <= DISPLAY_MAX_T:
                             print(
-                                f'time {time}ms: Process {processes[running[3]][0]} '
-                                f'(tau {processes[running[3]][5]}ms) '
+                                f'time {time}ms: Process {processes[CPUstatus[3]][0]} '
+                                f'(tau {processes[CPUstatus[3]][5]}ms) '
                                 f'completed a CPU burst; '
-                                f'{processes[running[3]][2]} burst to go',
+                                f'{processes[CPUstatus[3]][2]} burst to go',
                                 printReadyQueue(readyQueue))
-                    block_time = processes[running[3]][4][0] + 2
+                    block_time = processes[CPUstatus[3]][4][0] + 2
 
-                    processes[running[3]][4].pop(0)
+                    processes[CPUstatus[3]][4].pop(0)
 
                     # update tau <- alpha * burst time + (1 - alpha) * tau
-                    tau = math.ceil(alpha * (running[2] - running[1]) +
-                                    (1 - alpha) * processes[running[3]][5])
+                    tau = math.ceil(alpha * (CPUstatus[2] - CPUstatus[1]) +
+                                    (1 - alpha) * processes[CPUstatus[3]][5])
                     if time <= DISPLAY_MAX_T:
                         print(
                             f'time {time}ms: Recalculated tau from '
-                            f'{processes[running[3]][5]}ms to {tau}ms '
-                            f'for process {processes[running[3]][0]}',
+                            f'{processes[CPUstatus[3]][5]}ms to {tau}ms '
+                            f'for process {processes[CPUstatus[3]][0]}',
                             printReadyQueue(readyQueue))
-                    processes[running[3]][5] = tau
+                    processes[CPUstatus[3]][5] = tau
 
                     if time <= DISPLAY_MAX_T:
                         print(
-                            f'time {time}ms: Process {processes[running[3]][0]} '
+                            f'time {time}ms: Process {processes[CPUstatus[3]][0]} '
                             f'switching out of CPU; will block on I/O '
                             f'until time {time + block_time}ms',
                             printReadyQueue(readyQueue))
-                    block_map[processes[running[3]][0]] = \
-                        time + block_time, processes[running[3]][0]
+                    blockDict[processes[CPUstatus[3]][0]] = \
+                        time + block_time, processes[CPUstatus[3]][0]
+            # time == the time CPU ready for the next process
+            if time == CPUstatus[2] + 2:
+                CPUstatus[0] = False
 
-        # wait for another 2ms for cpu to be reused
-        if running[0]:
-            if time == running[2] + 2:
-                running[0] = False
-
-        for v in block_map.values():
+        # new arrival when CPU being used
+        for v in blockDict.values():
             if time == v[0]:
                 readyQueue.append(v[1])
                 readyQueue.sort(key=lambda x: (processes[x][5], x))
@@ -128,32 +125,35 @@ def SJF(procsList, f, alpha):
                         printReadyQueue(readyQueue))
 
         # check if there is a process coming at this time
-        if time in arrival_time_map.keys():
-            readyQueue.append(arrival_time_map[time][0])
+        if time in arrivalTimeDict.keys():
+            readyQueue.append(arrivalTimeDict[time][0])
             readyQueue.sort(key=lambda x: (processes[x][5], x))
             if time <= DISPLAY_MAX_T:
                 print(
-                    f'time {time}ms: Process {arrival_time_map[time][0]} '
-                    f'(tau {arrival_time_map[time][5]}ms) arrived; '
+                    f'time {time}ms: Process {arrivalTimeDict[time][0]} '
+                    f'(tau {arrivalTimeDict[time][5]}ms) arrived; '
                     f'added to ready queue', printReadyQueue(readyQueue))
 
         # no process is running and there is at least one ready process
-        if not running[0] and len(readyQueue) > 0:
-            next_proc = readyQueue[0]
-            readyQueue.pop(0)
-            running[0] = True
-            running[1] = time + 2  # start
-            running[2] = time + processes[next_proc][3][0] + 2  # end
-            processes[next_proc][3].pop(0)
-            processes[next_proc][2] -= 1
-            running[3] = next_proc
+        if not CPUstatus[0] and len(readyQueue) > 0:
+            nextProcess = CPUstatus[3] = readyQueue.pop(0)  # get the name of next process store it to CPUstatus[3]
+            CPUstatus[0] = True  # CPU in used
+            CPUstatus[1] = time + 2  # start time
+            CPUstatus[2] = time + processes[nextProcess][3][0] + 2  # end time
+            processes[nextProcess][3].pop(0)  # pop first cpu burst
+            processes[nextProcess][2] -= 1  # number of cpu bursts - 1
 
-            # context switch
+            # number of context switch + 1
             numContextSwitches += 1
 
-            if curr_proc != '' and next_proc != curr_proc:
-                running[1] += 2
-                running[2] += 2
+            if curr_proc != '' and nextProcess != curr_proc:
+                CPUstatus[1] += 2
+                CPUstatus[2] += 2
+
+        # no processes left
+        if len(processes.keys()) == 0:
+            print(f"time {time + 1}ms: Simulator ended for SJF [Q empty]")
+            break
 
         for _ in set(old_read_queue).intersection(readyQueue):
             waitTime += 1
@@ -161,7 +161,7 @@ def SJF(procsList, f, alpha):
         time += 1
 
     avgCPUBurstTime = cpu_burst_time[0] / cpu_burst_time[1]
-    avgWaitTime = waitTime / sum([p.get()[2] for p in procsList])
+    avgWaitTime = waitTime / sum([p.get()[2] for p in processList])
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
     CPUUtilization = round(100 * useful_time / (time + 1), 3)
 
