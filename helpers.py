@@ -6,7 +6,9 @@ def printReadyQueue(ready_queue):
     if len(ready_queue) == 0:
         res += 'empty]'
 
+
 DISPLAY_MAX_T = 1000
+
 
 def printReadyQueue(readyQueue):
     ret = '[Q '

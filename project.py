@@ -34,7 +34,6 @@ class Process:
     def getName(self):
         return self.processName
 
-
     def getArrivalTime(self):
         return self.arrivalTime
     

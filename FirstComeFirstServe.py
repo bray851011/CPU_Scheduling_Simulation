@@ -11,8 +11,6 @@ def FCFS(procsList, f):
 
     numContextSwitches = 0
     cpu_burst_time = [0, 0]
-    wait_time = 0
-    cpu_burst_time = [0,0]
     waitTime = 0
     useful_time = 0
 
@@ -21,9 +19,9 @@ def FCFS(procsList, f):
     arrival_time_map = {}
     processes = {}
     readyQueue = []
-    for thread in procsList:
-        arrival_time_map[thread.getArrivalTime()] = thread.get()
-        processes[thread.getName()] = [*thread.get()]
+    for process in procsList:
+        arrival_time_map[process.getArrivalTime()] = process.get()
+        processes[process.getName()] = [*process.get()]
 
     time = 0
     running = [False, '', '', '']
