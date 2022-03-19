@@ -12,9 +12,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
     algo = 'SRT'
     numContextSwitches = 0
     CPUBurstStart = 0
-    CPUBurstEnd = 0
     waitTime = 0
-    useful_time = 0
     numPreemptions = 0
 
     printStartSimulator(algo)
@@ -36,7 +34,6 @@ def SRT(processList, f, alpha, contextSwitchTime):
 
     while True:
 
-        prevReadyQueue = readyQueue
         currentProcess = ''
 
         # If there are no processes left, then simulator is done
@@ -50,8 +47,6 @@ def SRT(processList, f, alpha, contextSwitchTime):
                 burstTime = runningEnd - runningStart
                 currentProcess = runningProcess
                 CPUBurstStart += burstTime
-                useful_time += burstTime
-                CPUBurstEnd += 1
                 originalBurstTime = originalBurstTimes[runningProcess][0]
                 # If the current process is a newcomer
                 currentTau = processes[runningProcess].getTau()
@@ -99,15 +94,16 @@ def SRT(processList, f, alpha, contextSwitchTime):
         if unblockedProcesses:
             readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
             nextProcess = readyQueue[0]
-            if usingCPU and processes[nextProcess].getTau() < processes[runningProcess].getTau():
+            tempRunningTime = time - runningStart
+            if usingCPU and processes[nextProcess].getTau() < processes[runningProcess].getTau() - tempRunningTime:
                 printPreemption(time, runningProcess, processes, readyQueue)
                 numPreemptions += 1
-                processes[runningProcess].getCPUBurstTimes()[0] -= (time - runningStart)
+                processes[runningProcess].getCPUBurstTimes()[0] -= tempRunningTime
                 time += 2
                 usingCPU = False
+                CPUBurstStart -= tempRunningTime
                 readyQueue.append(runningProcess)
                 unblockedProcesses.remove(nextProcess)
-                print("Preemption")
             for proc in unblockedProcesses:
                 printIOComplete(time, proc, processes[proc].getTau(), readyQueue)
 
