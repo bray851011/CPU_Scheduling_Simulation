@@ -42,14 +42,20 @@ class Process:
     def getCPUBurstTimes(self):
         return self.CPUBurstTimes
     
-    def popNextCPUBurstTime(self):
+    def getCurrCPUBurst(self):
+        return self.CPUBurstTimes[0]
+    
+    def popCurrCPUBurst(self):
         self.CPUBursts -= 1
         return self.CPUBurstTimes.pop(0)
     
     def getIOBurstTimes(self):
         return self.IOBurstTimes
+
+    def getCurrIOBurst(self):
+        return self.IOBurstTimes[0]
     
-    def popNextIOBurstTime(self):
+    def popCurrIOBurstTime(self):
         return self.IOBurstTimes.pop(0)
     
     def getTau(self):
@@ -58,9 +64,12 @@ class Process:
     def setTau(self, tau):
         self.tau = tau
 
-    def removeFirstCPUBurst(self):
+    def removeCurrCPUBurst(self):
         self.CPUBurstTimes.pop(0)
         self.CPUBursts -= 1
+
+    # def augmentFirstCPUBurst(self, val):
+    #     self.CPUBurstTimes[0] += val
 
 
 def next_exp():

@@ -6,6 +6,7 @@ with an "infinite" time slice).
 
 import copy
 from helpers import *
+from printHelpers import *
 
 def FCFS(processList, f):
 
@@ -40,38 +41,38 @@ def FCFS(processList, f):
             printEndSimulator(time + 1, algo)
             break
 
-        # print changes to the process
         if usingCPU:
+            # If a CPU burst is starting
             if time == runningStart:
                 burstTime = runningEnd - runningStart
                 CPUBurstStart += burstTime
                 useful_time += burstTime
                 CPUBurstEnd += 1
                 printStartCPU(time, runningProcess, -1, burstTime, readyQueue)
-
-        if usingCPU:
+            
+            # If a CPU burst is complete
             if time == runningEnd:
                 currentProcess = runningProcess
 
-                if len(processes[currentProcess].getCPUBurstTimes()) == 0:
+                # If no more CPU bursts
+                if not processes[currentProcess].getNumCPUBursts():
                     printProcessTerminated(time, currentProcess, readyQueue)
                     del processes[currentProcess]
                 else:
                     printCPUComplete(time, currentProcess, -1, processes[currentProcess].getNumCPUBursts(), readyQueue)
 
-                    blockTime = processes[currentProcess].popNextIOBurstTime() + 2
+                    blockTime = processes[currentProcess].popCurrIOBurstTime() + 2
 
-                    printIOBlock(time, currentProcess, time + blockTime, readyQueue)
+                    unblockTime = time + blockTime
+                    printIOBlock(time, currentProcess, unblockTime, readyQueue)
 
-                    blockDict[currentProcess] = time + blockTime, currentProcess
+                    blockDict[currentProcess] = unblockTime, currentProcess
 
-        if usingCPU:
             if time == runningEnd + 2:
                 usingCPU = False
 
         doneProcesses = []
         for v in blockDict.values():
-
             # in case there are multiple processes ending at this time
             if time == v[0]:
                 doneProcesses.append(v[1])
@@ -87,11 +88,11 @@ def FCFS(processList, f):
             printProcessArrived(time, arrivalTimeDict[time], -1, readyQueue)
 
         # no process is running and there is at least one ready process
-        if not usingCPU and len(readyQueue):
+        if not usingCPU and readyQueue:
             usingCPU = True
             nextProcess = readyQueue.pop(0)
             runningStart = time + 2
-            runningEnd = time + processes[nextProcess].popNextCPUBurstTime() + 2
+            runningEnd = time + processes[nextProcess].popCurrCPUBurst() + 2
             runningProcess = nextProcess
 
             # context switch
@@ -108,6 +109,6 @@ def FCFS(processList, f):
     avgCPUBurstTime = CPUBurstStart / CPUBurstEnd
     avgWaitTime = waitTime / sum([p.getNumCPUBursts() for p in processList])
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
-    CPUUtilization = round( 100 * useful_time / (time+1), 3)
+    CPUUtilization = round(100 * useful_time / (time + 1), 3)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization)

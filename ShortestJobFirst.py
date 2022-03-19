@@ -6,6 +6,7 @@ selected as the next process executed by the CPU.
 '''
 
 from helpers import *
+from printHelpers import *
 
 def SJF(processList, f, alpha):
 

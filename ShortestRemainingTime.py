@@ -4,6 +4,7 @@ The SRT algorithm is a preemptive version of the SJF algorithm. In SRT, when a p
 '''
 
 from helpers import *
+from printHelpers import *
 
 def SRT(processList, f, alpha, contextSwitchTime):
 
