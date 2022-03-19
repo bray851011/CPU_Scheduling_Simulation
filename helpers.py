@@ -8,16 +8,21 @@ def updateTau(alpha, burstTime, tau):
 
 def addWaitTime(prevReadyQueue, readyQueue):
     count = 0
-    for process in prevReadyQueue:
+    for process in set(prevReadyQueue):
         if process in readyQueue:
             count += 1
     return count
 
 
-def checkIncomingProcesses(time, arrivalTimeDict, readyQueue):
-    if time in arrivalTimeDict.keys():
-        readyQueue.append(arrivalTimeDict[time][0])
-        printProcessArrived(time, arrivalTimeDict[time][0], -1, readyQueue)
+def getIncomingProcesses(time, processes, arrivalTimes, readyQueue, hasTau):
+    if time in arrivalTimes.keys():
+        tau = -1
+        process = arrivalTimes[time].getName()
+        readyQueue.append(process)
+        if hasTau:
+            readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
+            tau = arrivalTimes[time].getTau()
+        printProcessArrived(time, process, tau, readyQueue)
 
 
 def writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions, CPUUtilization):

@@ -20,22 +20,21 @@ def RR(processList, f, timeSlice):
 
     print(f"time 0ms: Simulator started for RR with time slice {timeSlice}ms [Q empty]")
 
-    arrivalTimeDict = {}
+    arrivalTimes = {}
     originalBurstTimes = {}
     processes = {}
     readyQueue = []
     for process in processList:
         originalBurstTimes[process.getName()] = copy.deepcopy(process.getCPUBurstTimes())
-        arrivalTimeDict[process.getArrivalTime()] = process.get()
+        arrivalTimes[process.getArrivalTime()] = copy.deepcopy(process)
         processes[process.getName()] = copy.deepcopy(process)
 
     time = 0
     usingCPU = False
-    blockDict = {}
+    blockedProcesses = {}
 
     while True:
 
-        prevReadyQueue = readyQueue
         currentProcess = ''
 
         # If there are no processes left, then simulator is done
@@ -56,13 +55,13 @@ def RR(processList, f, timeSlice):
                 if burstTime == originalBurstTime:
                     printStartCPU(time, currentProcess, -1, burstTime, readyQueue)
                 else:
-                    printRestartCPU(time, currentProcess, burstTime, originalBurstTimes[runningProcess][0], readyQueue)
+                    printRestartCPU(time, currentProcess, burstTime, originalBurstTime, -1, readyQueue)
             
             # If time slice is over
             if time == timeSlice + runningStart:
                 # If there's stuff in the ready queue, preempt
                 if readyQueue:
-                    CPUBurstStart -= runningEnd - time
+                    CPUBurstStart -= (runningEnd - time)
                     numPreemptions += 1
                     currentProcess = runningProcess
                     printProcessPreempted(time, currentProcess, processes[currentProcess].getCPUBurstTimes()[0]-(time-runningStart), readyQueue)
@@ -90,20 +89,20 @@ def RR(processList, f, timeSlice):
                     
                     blockTime = processes[currentProcess].getCurrIOBurst() + 2
 
-                    processes[currentProcess].popCurrIOBurstTime()
+                    processes[currentProcess].popCurrIOBurst()
                     originalBurstTimes[currentProcess].pop(0)
 
                     unblockTime = time + blockTime
                     printIOBlock(time, currentProcess, unblockTime, readyQueue)
 
-                    blockDict[currentProcess] = unblockTime
+                    blockedProcesses[currentProcess] = unblockTime
 
             if time == runningEnd + 2:
                 usingCPU = False
 
         # Get processes that have finished their IO block
         unblockedProcesses = []
-        for proc, v in blockDict.items():
+        for proc, v in blockedProcesses.items():
             # in case there are multiple processes ending at this time
             if time == v:
                 unblockedProcesses.append(proc)
@@ -113,10 +112,7 @@ def RR(processList, f, timeSlice):
             printIOComplete(time, process, -1, readyQueue)
 
         # Check if there's a process coming at this time
-        checkIncomingProcesses(time, arrivalTimeDict, readyQueue)
-        # if time in arrivalTimeDict.keys():
-        #     readyQueue.append(arrivalTimeDict[time][0])
-        #     printProcessArrived(time, arrivalTimeDict[time][0], -1, readyQueue)
+        getIncomingProcesses(time, None, arrivalTimes, readyQueue, False)
 
         # If there aren't any processes running but there are some in the ready queue
         if not usingCPU and readyQueue:
@@ -133,14 +129,14 @@ def RR(processList, f, timeSlice):
                 runningStart += 2
                 runningEnd += 2
 
-        waitTime += addWaitTime(prevReadyQueue, readyQueue)
+        waitTime += len(readyQueue)
 
         time += 1
 
-
-    avgCPUBurstTime = CPUBurstStart / CPUBurstEnd
-    avgWaitTime = waitTime / sum([p.getNumCPUBursts() for p in processList])
-    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
-    CPUUtilization = round(100 * useful_time / (time + 1), 3)
+    totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
+    avgCPUBurstTime = CPUBurstStart / totalCPUBursts
+    avgWaitTime = waitTime / totalCPUBursts
+    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4.101
+    CPUUtilization = round(100 * CPUBurstStart / (time + 1), 3)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions, CPUUtilization)

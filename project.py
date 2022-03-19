@@ -55,7 +55,7 @@ class Process:
     def getCurrIOBurst(self):
         return self.IOBurstTimes[0]
     
-    def popCurrIOBurstTime(self):
+    def popCurrIOBurst(self):
         return self.IOBurstTimes.pop(0)
     
     def getTau(self):
