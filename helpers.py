@@ -1,10 +1,3 @@
-PRINT_UNTIL = 1000
-
-
-def printReadyQueue(ready_queue):
-    res = '[Q '
-    if len(ready_queue) == 0:
-        res += 'empty]'
 
 DISPLAY_MAX_T = 1000
 
@@ -17,6 +10,22 @@ def printReadyQueue(readyQueue):
             ret += item
         ret = ret + ']'
     return ret
+
+
+def printProcessArrived(time, process, tau, readyQueue):
+    if time <= DISPLAY_MAX_T:
+        print(f'time {time}ms: Process {process} ', end='')
+        if tau != -1:
+            print(f'(tau {tau}ms) ', end='')
+        print(f'arrived; added to ready queue', printReadyQueue(readyQueue))
+
+
+def printIOCompleted(time, process, tau, readyQueue):
+    if time <= DISPLAY_MAX_T:
+        print(
+            f'time {time}ms: Process {process} (tau {tau}ms) '
+            f'completed I/O; added to ready queue',
+            printReadyQueue(readyQueue))
 
 
 def writeData(f, algo, data):

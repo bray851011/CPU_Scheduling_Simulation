@@ -4,13 +4,14 @@ The SRT algorithm is a preemptive version of the SJF algorithm. In SRT, when a p
 '''
 
 import math
-from helpers import DISPLAY_MAX_T, printReadyQueue, writeData
+from helpers import *
 
-def SRT(procsList, f, alpha):
+def SRT(processList, f, alpha, contextSwitchTime):
 
     # analysis variable
     numContextSwitches = 0
-    cpu_burst_time = [0, 0]
+    CPUBurstStart = 0
+    CPUBurstEnd = 0
     waitTime = 0
     useful_time = 0
     numPreemptions = 0
@@ -20,147 +21,133 @@ def SRT(procsList, f, alpha):
     arrivalTimeDict = {}
     processes = {}
     readyQueue = []
-    for thread in procsList:
+    for thread in processList:
         arrivalTimeDict[thread.get()[1]] = thread.get()
         processes[thread.get()[0]] = [*thread.get()]
 
     time = 0
 
-    # running[0] -- whether CPU is in use
-    # running[1] -- if running[0], then this represents the start time of this running
-    # running[2] -- if running[0], then this represents the end time of this running
-    # running[3] -- if running[0], then this represents the process name of this running
-    running = [False, '', '', '']
+    isRunning = False
 
     # when a process is blocked, add to this map with its time
     blockDict = {}
 
     while True:
 
-        old_read_queue = readyQueue
+        prevReadyQueue = readyQueue
 
-        curr_proc = ''
+        currentProcess = ''
 
-        # no processes left
-        if len(processes.keys()) == 0:
+        # If there are no processes left, then simulator is done
+        if not processes:
             print(f"time {time + 1}ms: Simulator ended for SRT [Q empty]")
             break
 
-        # start running a process -- time == start time of the process
-        if running[0]:
-            if time == running[1]:
-                curr_proc = running[3]
-                cpu_burst_time[0] += running[2] - running[1]
-                useful_time += running[2] - running[1]
-                cpu_burst_time[1] += 1
+        if isRunning:
+            # start running a process -- time == start time of the process
+            if time == runningStart:
+                burstTime = runningEnd - runningStart
+                currentProcess = runningProcess
+                CPUBurstStart += burstTime
+                useful_time += burstTime
+                CPUBurstEnd += 1
                 if time <= DISPLAY_MAX_T:
                     print(
-                        f'time {time}ms: Process {processes[running[3]][0]} '
-                        f'(tau {processes[running[3]][5]}ms) started using the CPU '
-                        f'for {running[2] - running[1]}ms burst',
+                        f'time {time}ms: Process {processes[runningProcess][0]} '
+                        f'(tau {processes[runningProcess][5]}ms) started using the CPU '
+                        f'for {burstTime}ms burst',
                         printReadyQueue(readyQueue))
-
-        # end running a process -- time == end time of the process
-        if running[0]:
-            if time == running[2]:
-                curr_proc = running[3]
+            
+            # end running a process -- time == end time of the process
+            if time == runningEnd:
+                currentProcess = runningProcess
 
                 # check if the process reaches the end -- cpu burst time list is empty
-                if len(processes[running[3]][3]) == 0:
-                    print(f'time {time}ms: Process {running[3]} terminated',
+                if len(processes[runningProcess][3]) == 0:
+                    print(f'time {time}ms: Process {currentProcess} terminated',
                           printReadyQueue(readyQueue))
-                    del processes[running[3]]
+                    del processes[currentProcess]
                 else:
                     if time <= DISPLAY_MAX_T:
-                        if processes[running[3]][2] > 1:
-                            print(
-                                f'time {time}ms: Process {processes[running[3]][0]} '
-                                f'(tau {processes[running[3]][5]}ms) '
+                        print(
+                                f'time {time}ms: Process {currentProcess} '
+                                f'(tau {processes[currentProcess][5]}ms) '
                                 f'completed a CPU burst; '
-                                f'{processes[running[3]][2]} bursts to go',
+                                f'{processes[currentProcess][2]} '
+                                f'burst{"s" if processes[currentProcess][2] > 1 else ""} to go',
                                 printReadyQueue(readyQueue))
-                        else:
-                            print(
-                                f'time {time}ms: Process {processes[running[3]][0]} '
-                                f'(tau {processes[running[3]][5]}ms) '
-                                f'completed a CPU burst; '
-                                f'{processes[running[3]][2]} burst to go',
-                                printReadyQueue(readyQueue))
-                    block_time = processes[running[3]][4][0] + 2
+                    blockTime = processes[currentProcess][4][0] + 2
 
-                    processes[running[3]][4].pop(0)
+                    processes[currentProcess][4].pop(0)
 
                     # update tau <- alpha * burst time + (1 - alpha) * tau
-                    tau = math.ceil(alpha * (running[2] - running[1]) +
-                                    (1 - alpha) * processes[running[3]][5])
+                    tau = math.ceil(alpha * (runningEnd - runningStart) +
+                                    (1 - alpha) * processes[currentProcess][5])
                     if time <= DISPLAY_MAX_T:
                         print(
                             f'time {time}ms: Recalculated tau from '
-                            f'{processes[running[3]][5]}ms to {tau}ms '
-                            f'for process {processes[running[3]][0]}',
+                            f'{processes[currentProcess][5]}ms to {tau}ms '
+                            f'for process {currentProcess}',
                             printReadyQueue(readyQueue))
-                    processes[running[3]][5] = tau
+                    processes[currentProcess][5] = tau
 
                     if time <= DISPLAY_MAX_T:
                         print(
-                            f'time {time}ms: Process {processes[running[3]][0]} '
+                            f'time {time}ms: Process {currentProcess} '
                             f'switching out of CPU; will block on I/O '
-                            f'until time {time + block_time}ms',
+                            f'until time {time + blockTime}ms',
                             printReadyQueue(readyQueue))
-                    blockDict[processes[running[3]][0]] = \
-                        time + block_time, processes[running[3]][0]
+                    blockDict[currentProcess] = time + blockTime, currentProcess
 
         # wait for another 2ms for cpu to be reused
-        if running[0]:
-            if time == running[2] + 2:
-                running[0] = False
+        if isRunning:
+            if time == runningEnd + 2:
+                isRunning = False
 
         for v in blockDict.values():
             if time == v[0]:
                 readyQueue.append(v[1])
                 readyQueue.sort(key=lambda x: (processes[x][5], x))
                 if time <= DISPLAY_MAX_T:
-                    print(
-                        f'time {time}ms: Process {v[1]} (tau {processes[v[1]][5]}ms) '
-                        f'completed I/O; added to ready queue',
-                        printReadyQueue(readyQueue))
+                    printIOCompleted(time, v[1], processes[v[1]][5], readyQueue)
 
-        # check if there is a process coming at this time
+        # Check if there's a process coming at this time
         if time in arrivalTimeDict.keys():
             readyQueue.append(arrivalTimeDict[time][0])
             readyQueue.sort(key=lambda x: (processes[x][5], x))
             if time <= DISPLAY_MAX_T:
-                print(
-                    f'time {time}ms: Process {arrivalTimeDict[time][0]} '
-                    f'(tau {arrivalTimeDict[time][5]}ms) arrived; '
-                    f'added to ready queue', printReadyQueue(readyQueue))
+                printProcessArrived(time, arrivalTimeDict[time][0], arrivalTimeDict[time][5], readyQueue)
+                # print(
+                #     f'time {time}ms: Process {arrivalTimeDict[time][0]} '
+                #     f'(tau {arrivalTimeDict[time][5]}ms) arrived; '
+                #     f'added to ready queue', printReadyQueue(readyQueue))
 
         # no process is running and there is at least one ready process
-        if not running[0] and len(readyQueue) > 0:
-            nextProcess = readyQueue[0]
-            readyQueue.pop(0)
-            running[0] = True
-            running[1] = time + 2  # start
-            running[2] = time + processes[nextProcess][3][0] + 2  # end
+        if not isRunning and len(readyQueue) > 0:
+            nextProcess = readyQueue.pop(0)
+            isRunning = True
+            runningStart = time + 2  # start
+            runningEnd = time + processes[nextProcess][3][0] + 2  # end
             processes[nextProcess][3].pop(0)
             processes[nextProcess][2] -= 1
-            running[3] = nextProcess
+            runningProcess = nextProcess
 
             # context switch
             numContextSwitches += 1
 
-            if curr_proc != '' and nextProcess != curr_proc:
-                running[1] += 2
-                running[2] += 2
+            if currentProcess != '' and nextProcess != currentProcess:
+                runningStart += 2
+                runningEnd += 2
 
-        for p in set(old_read_queue).intersection(readyQueue):
-            waitTime += 1
+        for p in prevReadyQueue:
+            if p in readyQueue:
+                waitTime += 1
 
         time += 1
 
-    avgCPUBurstTime = cpu_burst_time[0] / cpu_burst_time[1]
-    avgWaitTime = waitTime / sum([p.get()[2] for p in procsList])
-    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
+    avgCPUBurstTime = CPUBurstStart / CPUBurstEnd
+    avgWaitTime = waitTime / sum([p.get()[2] for p in processList])
+    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + contextSwitchTime
     CPUUtilization = round(100 * useful_time / (time + 1), 3)
 
     data = avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions, CPUUtilization

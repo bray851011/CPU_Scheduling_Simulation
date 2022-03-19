@@ -4,12 +4,14 @@ The RR algorithm is essentially the FCFS algorithm with predeﬁned time slice t
 If a process completes its CPU burst before a time slice expiration, the next process on the ready queue is immediately context-switched in to use the CPU.
 '''
 
-from helpers import printReadyQueue, writeData, DISPLAY_MAX_T
+from helpers import *
 
-def RR(procsList, f, timeSlice):
+def RR(processList, f, timeSlice):
+    
     numContextSwitches = 0
     count_preemption = 0
-    cpu_burst_time = [0,0]
+    CPUBurstStart = 0
+    CPUBurstEnd = 0
     waitTime = 0
     useful_time = 0
 
@@ -18,53 +20,53 @@ def RR(procsList, f, timeSlice):
     arrivalTimeDict = {}
     processes = {}
     readyQueue = []
-    for thread in procsList:
+    for thread in processList:
         arrivalTimeDict[thread.get()[1]] = thread.get()
         processes[thread.get()[0]] = [*thread.get()]
 
     time = 0
-    running = [False, '', '', '']
+    isRunning = False
     blockDict = {}
 
     while True:
 
-        old_read_queue = readyQueue
+        prevReadyQueue = readyQueue
 
-        curr_proc = ''
+        currentProcess = ''
 
-        # no processes left
-        if len(processes.keys()) == 0:
+        # If there are no processes left, then simulator is done
+        if not processes:
             print(f"time {time + 1}ms: Simulator ended for RR [Q empty]")
             break
 
         # print changes to the process
-        if running[0] and time == running[1]:
-            cpu_burst_time[0] += running[2] - running[1]
-            useful_time += running[2] - running[1]
-            cpu_burst_time[1] += 1
+        if isRunning and time == runningStart:
+            CPUBurstStart += runningEnd - runningStart
+            useful_time += runningEnd - runningStart
+            CPUBurstEnd += 1
             if time <= DISPLAY_MAX_T:
                 print(
-                    f'time {time}ms: Process {processes[running[3]][0]} '
-                    f'started using the CPU for {running[2] - running[1]}ms burst',
+                    f'time {time}ms: Process {processes[runningProcess][0]} '
+                    f'started using the CPU for {runningEnd - runningStart}ms burst',
                     printReadyQueue(readyQueue))
 
-        if running[0]:
+        if isRunning:
             # preemption occur when ready queue isn't empty
-            if time-running[1]==timeSlice:
+            if time - runningStart == timeSlice:
                 if len(readyQueue) > 0:
-                    cpu_burst_time[0] -= running[2] - time
+                    CPUBurstStart -= runningEnd - time
                     count_preemption += 1
-                    curr_proc = running[3]
+                    currentProcess = runningProcess
                     if time <= DISPLAY_MAX_T:
                         print(
                             f'time {time}ms: Time slice expired; '
-                            f'process {curr_proc} preempted with {processes[curr_proc][3][0]-(time-running[1])}ms to go',
+                            f'process {currentProcess} preempted with {processes[currentProcess][3][0]-(time-runningStart)}ms to go',
                             printReadyQueue(readyQueue))
                     
                     # context switch
-                    processes[curr_proc][3][0] -= timeSlice
-                    running[0] = False
-                    readyQueue.append(curr_proc)
+                    processes[currentProcess][3][0] -= timeSlice
+                    isRunning = False
+                    readyQueue.append(currentProcess)
 
                 else: # no preemption
                     if time <= DISPLAY_MAX_T:
@@ -73,48 +75,48 @@ def RR(procsList, f, timeSlice):
                             f'no preemption because ready queue is empty',
                             printReadyQueue(readyQueue))
 
-        if running[0]:
+        if isRunning:
             # complete a CPU burst
-            if time == running[2]:
+            if time == runningEnd:
 
-                curr_proc = running[3]
-                processes[curr_proc][2] -= 1
-                processes[curr_proc][3].pop(0)
+                currentProcess = runningProcess
+                processes[currentProcess][2] -= 1
+                processes[currentProcess][3].pop(0)
 
-                if len(processes[curr_proc][3]) == 0:
-                    print(f'time {time}ms: Process {curr_proc} terminated',
+                if len(processes[currentProcess][3]) == 0:
+                    print(f'time {time}ms: Process {currentProcess} terminated',
                           printReadyQueue(readyQueue))
-                    del processes[curr_proc]
+                    del processes[currentProcess]
                 else:
                     if time <= DISPLAY_MAX_T:
-                        if processes[curr_proc][2] > 1:
+                        if processes[currentProcess][2] > 1:
                             print(
-                                f'time {time}ms: Process {processes[curr_proc][0]} '
+                                f'time {time}ms: Process {currentProcess} '
                                 f'completed a CPU burst; '
-                                f'{processes[curr_proc][2]} bursts to go',
+                                f'{processes[currentProcess][2]} bursts to go',
                             printReadyQueue(readyQueue))
                         else:
                             print(
-                                f'time {time}ms: Process {processes[curr_proc][0]} '
+                                f'time {time}ms: Process {currentProcess} '
                                 f'completed a CPU burst; '
-                                f'{processes[curr_proc][2]} burst to go',
+                                f'{processes[currentProcess][2]} burst to go',
                                 printReadyQueue(readyQueue))
-                    block_time = processes[curr_proc][4][0] + 2
+                    blockTime = processes[currentProcess][4][0] + 2
 
-                    processes[curr_proc][4].pop(0)
+                    processes[currentProcess][4].pop(0)
 
                     if time <= DISPLAY_MAX_T:
                         print(
-                            f'time {time}ms: Process {processes[curr_proc][0]} '
+                            f'time {time}ms: Process {currentProcess} '
                             f'switching out of CPU; will block on I/O '
-                            f'until time {time + block_time}ms',
+                            f'until time {time + blockTime}ms',
                             printReadyQueue(readyQueue))
-                    blockDict[processes[curr_proc][0]] = \
-                        time + block_time, processes[curr_proc][0]
+                    blockDict[currentProcess] = \
+                        time + blockTime, currentProcess
 
-        if running[0]:
-            if time == running[2] + 2:
-                running[0] = False
+        if isRunning:
+            if time == runningEnd + 2:
+                isRunning = False
 
         completed_proc = []
         for v in blockDict.values():
@@ -135,34 +137,31 @@ def RR(procsList, f, timeSlice):
         # check if there is a process coming at this time
         if time in arrivalTimeDict.keys():
             readyQueue.append(arrivalTimeDict[time][0])
-            if time <= DISPLAY_MAX_T:
-                print(
-                    f'time {time}ms: Process {arrivalTimeDict[time][0]} arrived; '
-                    f'added to ready queue', printReadyQueue(readyQueue))
+            printProcessArrived(time, arrivalTimeDict[time][0], -1, readyQueue)
 
         # no process is running and there is at least one ready process
-        if not running[0] and len(readyQueue) > 0:
-            nextProcess = readyQueue[0]
-            readyQueue.pop(0)
-            running[0] = True
-            running[1] = time + 2  # start
-            running[2] = time + processes[nextProcess][3][0] + 2  # end
-            running[3] = nextProcess
+        if not isRunning and len(readyQueue) > 0:
+            nextProcess = readyQueue.pop(0)
+            isRunning = True
+            runningStart = time + 2  # start
+            runningEnd = time + processes[nextProcess][3][0] + 2  # end
+            runningProcess = nextProcess
 
             # context switch
             numContextSwitches += 1
 
-            if curr_proc != '' and nextProcess != curr_proc:
-                running[1] += 2
-                running[2] += 2
+            if currentProcess != '' and nextProcess != currentProcess:
+                runningStart += 2
+                runningEnd += 2
 
-        for p in set(old_read_queue).intersection(readyQueue):
-            waitTime += 1
+        for p in prevReadyQueue:
+            if p in readyQueue:
+                waitTime += 1
 
         time += 1
 
-    avgCPUBurstTime = cpu_burst_time[0] / cpu_burst_time[1]
-    avgWaitTime = waitTime / sum([p.get()[2] for p in procsList])
+    avgCPUBurstTime = CPUBurstStart / CPUBurstEnd
+    avgWaitTime = waitTime / sum([p.get()[2] for p in processList])
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
     CPUUtilization = round( 100 * useful_time / (time+1), 3)
 
