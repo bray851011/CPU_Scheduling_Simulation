@@ -18,11 +18,11 @@ def SJF(procsList, f, alpha):
 
     print("time 0ms: Simulator started for SJF [Q empty]")
 
-    arrival_time_map = {}
+    arrivalTimeDict = {}
     processes = {}
     readyQueue = []
     for thread in procsList:
-        arrival_time_map[thread.get()[1]] = thread.get()
+        arrivalTimeDict[thread.get()[1]] = thread.get()
         processes[thread.get()[0]] = [*thread.get()]
 
     time = 0
@@ -34,7 +34,7 @@ def SJF(procsList, f, alpha):
     running = [False, '', '', '']
 
     # when a process is blocked, add to this map with its time
-    block_map = {}
+    blockDict = {}
 
     while True:
 
@@ -109,7 +109,7 @@ def SJF(procsList, f, alpha):
                             f'switching out of CPU; will block on I/O '
                             f'until time {time + block_time}ms',
                             printReadyQueue(readyQueue))
-                    block_map[processes[running[3]][0]] = \
+                    blockDict[processes[running[3]][0]] = \
                         time + block_time, processes[running[3]][0]
 
         # wait for another 2ms for cpu to be reused
@@ -117,7 +117,7 @@ def SJF(procsList, f, alpha):
             if time == running[2] + 2:
                 running[0] = False
 
-        for v in block_map.values():
+        for v in blockDict.values():
             if time == v[0]:
                 readyQueue.append(v[1])
                 readyQueue.sort(key=lambda x: (processes[x][5], x))
@@ -128,30 +128,30 @@ def SJF(procsList, f, alpha):
                         printReadyQueue(readyQueue))
 
         # check if there is a process coming at this time
-        if time in arrival_time_map.keys():
-            readyQueue.append(arrival_time_map[time][0])
+        if time in arrivalTimeDict.keys():
+            readyQueue.append(arrivalTimeDict[time][0])
             readyQueue.sort(key=lambda x: (processes[x][5], x))
             if time <= DISPLAY_MAX_T:
                 print(
-                    f'time {time}ms: Process {arrival_time_map[time][0]} '
-                    f'(tau {arrival_time_map[time][5]}ms) arrived; '
+                    f'time {time}ms: Process {arrivalTimeDict[time][0]} '
+                    f'(tau {arrivalTimeDict[time][5]}ms) arrived; '
                     f'added to ready queue', printReadyQueue(readyQueue))
 
         # no process is running and there is at least one ready process
         if not running[0] and len(readyQueue) > 0:
-            next_proc = readyQueue[0]
+            nextProcess = readyQueue[0]
             readyQueue.pop(0)
             running[0] = True
             running[1] = time + 2  # start
-            running[2] = time + processes[next_proc][3][0] + 2  # end
-            processes[next_proc][3].pop(0)
-            processes[next_proc][2] -= 1
-            running[3] = next_proc
+            running[2] = time + processes[nextProcess][3][0] + 2  # end
+            processes[nextProcess][3].pop(0)
+            processes[nextProcess][2] -= 1
+            running[3] = nextProcess
 
             # context switch
             numContextSwitches += 1
 
-            if curr_proc != '' and next_proc != curr_proc:
+            if curr_proc != '' and nextProcess != curr_proc:
                 running[1] += 2
                 running[2] += 2
 
