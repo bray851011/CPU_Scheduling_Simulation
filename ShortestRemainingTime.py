@@ -91,20 +91,22 @@ def SRT(processList, f, alpha, contextSwitchTime):
                 readyQueue.append(copy.deepcopy(proc))
                 unblockedProcesses.append(copy.deepcopy(proc))
         if unblockedProcesses:
-            readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
-            nextProcess = readyQueue[0]
-            tempRunningTime = time - runningStart
             # if time == 128127:
             #     print('')
-            if usingCPU and processes[nextProcess].getTau() < processes[runningProcess].getTau() - tempRunningTime:
-                printPreemption(time, runningProcess, processes, readyQueue)
-                preempted = True
-                numPreemptions += 1
-                processes[runningProcess].getCPUBurstTimes()[0] -= tempRunningTime
-                runningEnd = time
-                CPUBurstStart -= tempRunningTime
-                if nextProcess in unblockedProcesses:
-                    unblockedProcesses.remove(nextProcess)
+            if usingCPU:
+                readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
+                nextProcess = readyQueue[0]
+                tempRunningTime = time - runningStart
+                extra = originalBurstTimes[runningProcess][0] - processes[runningProcess].getCurrCPUBurst()
+                if processes[nextProcess].getTau() < processes[runningProcess].getTau() - tempRunningTime - extra:
+                    printPreemption(time, runningProcess, processes, readyQueue)
+                    preempted = True
+                    numPreemptions += 1
+                    processes[runningProcess].getCPUBurstTimes()[0] -= tempRunningTime
+                    runningEnd = time
+                    CPUBurstStart -= tempRunningTime
+                    if nextProcess in unblockedProcesses:
+                        unblockedProcesses.remove(nextProcess)
             for proc in unblockedProcesses:
                 printIOComplete(time, proc, processes[proc].getTau(), readyQueue)
 
