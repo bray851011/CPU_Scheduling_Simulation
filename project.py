@@ -10,11 +10,11 @@ from ShortestRemainingTime import SRT
 class Rand48(object):
     
     def drand48(self):
-        self.Xn = (0x5deece66d * self.Xn + 0xb) % (2 ** 48)
-        return self.Xn / (2 ** 48)
+        self.Xn = (0x5deece66d * self.Xn + 0xb) % pow(2, 48)
+        return self.Xn / pow(2, 48)
 
-    def srand48(self, seedval):
-        self.Xn = (seedval << 16) + 0x330E
+    def srand48(self, seed):
+        self.Xn = (seed << 16) + 0x330e
 
 
 class Process:
@@ -63,13 +63,6 @@ class Process:
 
     def setTau(self, tau):
         self.tau = tau
-
-    def removeCurrCPUBurst(self):
-        self.CPUBurstTimes.pop(0)
-        self.CPUBursts -= 1
-
-    # def augmentFirstCPUBurst(self, val):
-    #     self.CPUBurstTimes[0] += val
 
 
 def next_exp():
@@ -152,16 +145,14 @@ if __name__ == "__main__":
                         break
                 IOBurstTimes.append(10 * IOBurstTime)
 
-        # gather info for the thread
         processName = str(chr(i + 65))
-
-        # construct thread object
         processList.append(Process(processName, arrivalTime, numCPUBursts,
                                   CPUBurstTimes, IOBurstTimes, TAU))
 
-        print(f'Process {processName} (arrival time {arrivalTime} ms) '
-                  f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
-                  f'(tau {TAU}ms)')
+        print(
+            f'Process {processName} (arrival time {arrivalTime} ms) '
+            f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
+            f'(tau {TAU}ms)')
         printBurstTimes(CPUBurstTimes, IOBurstTimes)
 
     print()

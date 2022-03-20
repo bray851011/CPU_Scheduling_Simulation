@@ -29,6 +29,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
     time = 0
 
     usingCPU = False
+    preempted = False
 
     blockedProcesses = {}
 
@@ -73,9 +74,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
 
                     # update tau <- alpha * burst time + (1 - alpha) * tau
                     newTau = updateTau(alpha, burstTime, currentTau)
-
                     printRecalculateTau(time, currentTau, newTau, currentProcess, readyQueue)
-
                     processes[currentProcess].setTau(newTau)
 
                     unblockTime = time + blockTime
@@ -97,12 +96,11 @@ def SRT(processList, f, alpha, contextSwitchTime):
             tempRunningTime = time - runningStart
             if usingCPU and processes[nextProcess].getTau() < processes[runningProcess].getTau() - tempRunningTime:
                 printPreemption(time, runningProcess, processes, readyQueue)
+                preempted = True
                 numPreemptions += 1
                 processes[runningProcess].getCPUBurstTimes()[0] -= tempRunningTime
-                time += 2
-                usingCPU = False
+                runningEnd = time
                 CPUBurstStart -= tempRunningTime
-                readyQueue.append(runningProcess)
                 unblockedProcesses.remove(nextProcess)
             for proc in unblockedProcesses:
                 printIOComplete(time, proc, processes[proc].getTau(), readyQueue)
@@ -112,6 +110,9 @@ def SRT(processList, f, alpha, contextSwitchTime):
 
         # Get next ready process if CPU isn't being used
         if not usingCPU and readyQueue:
+            if preempted:
+                readyQueue.append(runningProcess)
+                preempted = False
             usingCPU = True
             nextProcess = readyQueue.pop(0)
             runningStart = time + 2

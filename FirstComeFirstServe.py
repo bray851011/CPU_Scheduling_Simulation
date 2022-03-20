@@ -33,7 +33,6 @@ def FCFS(processList, f):
 
     while True:
 
-        prevReadyQueue = readyQueue
         currentProcess = ''
 
         # If there are no processes left, then simulator is done
@@ -97,11 +96,11 @@ def FCFS(processList, f):
                 runningStart += 2
                 runningEnd += 2
 
-        waitTime += addWaitTime(prevReadyQueue, readyQueue)
+        waitTime += len(readyQueue)
 
         time += 1
 
-    totalCPUBursts = sum([p.getNumCPUBursts() for p in processList])
+    totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
     avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
