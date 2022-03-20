@@ -100,7 +100,7 @@ def RR(processList, f, timeSlice, contextSwitchTime):
 
                     blockedProcesses[currentProcess] = unblockTime
 
-            if time == runningEnd + 2:
+            if time == runningEnd + hCST:
                 usingCPU = False
 
         # Get processes that have finished their IO block

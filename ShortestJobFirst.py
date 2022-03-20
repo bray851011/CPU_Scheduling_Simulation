@@ -80,7 +80,7 @@ def SJF(processList, f, alpha, contextSwitchTime):
                     blockedProcesses[currentProcess] = unblockTime
 
             # wait for another contextSwitchTime / 2 ms for cpu to be reused
-            if time == runningEnd + 2:
+            if time == runningEnd + hCST:
                 usingCPU = False
 
         for proc, unblockTime in blockedProcesses.items():
@@ -96,8 +96,8 @@ def SJF(processList, f, alpha, contextSwitchTime):
         if not usingCPU and len(readyQueue):
             nextProcess = readyQueue.pop(0)
             usingCPU = True
-            runningStart = time + 2
-            runningEnd = time + processes[nextProcess].getCurrCPUBurst() + 2
+            runningStart = time + hCST
+            runningEnd = time + processes[nextProcess].getCurrCPUBurst() + hCST
             processes[nextProcess].popCurrCPUBurst()
             runningProcess = nextProcess
 

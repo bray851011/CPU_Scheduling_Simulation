@@ -7,7 +7,6 @@ from RoundRobin import RR
 from ShortestJobFirst import SJF
 from ShortestRemainingTime import SRT
 
-
 class Rand48(object):
 
     def drand48(self):
@@ -27,9 +26,6 @@ class Process:
         self.CPUBurstTimes = CPUBurstTimes
         self.IOBurstTimes = IOBurstTimes
         self.tau = tau
-
-    def get(self):
-        return self.processName, self.arrivalTime, self.CPUBursts, self.CPUBurstTimes, self.IOBurstTimes, self.tau
 
     def getName(self):
         return self.processName
@@ -98,7 +94,7 @@ if __name__ == "__main__":
         contextSwitchTime = int(sys.argv[5])
         alpha = float(sys.argv[6])
         timeSlice = int(sys.argv[7])
-    except ValueError:
+    except:
         print("ERROR: There was a type error!")
         exit()
 

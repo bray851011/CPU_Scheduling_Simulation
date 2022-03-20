@@ -8,11 +8,13 @@ from printHelpers import *
 
 
 def SRT(processList, f, alpha, contextSwitchTime):
+    
     algo = 'SRT'
     numContextSwitches = 0
     CPUBurstStart = 0
     waitTime = 0
     numPreemptions = 0
+    hCST = int(contextSwitchTime / 2)
 
     printStartSimulator(algo)
 
@@ -69,7 +71,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
                     printCPUComplete(time, currentProcess, currentTau, processes[currentProcess].getNumCPUBursts(),
                                      readyQueue)
 
-                    blockTime = processes[currentProcess].popCurrIOBurst() + 2
+                    blockTime = processes[currentProcess].popCurrIOBurst() + hCST
                     burstTime = originalBurstTimes[currentProcess].pop(0)
 
                     # update tau <- alpha * burst time + (1 - alpha) * tau
@@ -82,7 +84,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
                     blockedProcesses[currentProcess] = unblockTime
 
             # wait for another 2ms for cpu to be reused
-            if time == runningEnd + 2:
+            if time == runningEnd + hCST:
                 usingCPU = False
 
         unblockedProcesses = []
@@ -122,7 +124,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
                 preempted = False
             usingCPU = True
             nextProcess = readyQueue.pop(0)
-            runningStart = time + 2
+            runningStart = time + hCST
             runningEnd = runningStart + processes[nextProcess].getCurrCPUBurst()
             runningProcess = nextProcess
 
@@ -130,8 +132,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                runningStart += 2
-                runningEnd += 2
+                runningStart += hCST
+                runningEnd += hCST
 
         waitTime += len(readyQueue)
 
