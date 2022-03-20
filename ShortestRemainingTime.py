@@ -1,4 +1,3 @@
-
 '''
 The SRT algorithm is a preemptive version of the SJF algorithm. In SRT, when a process arrives, before it enters the ready queue, if it has a CPU burst time that is less than the remaining time of the currently running process, a preemption occurs. When such a preemption occurs, the currently running process is added back to the ready queue.
 '''
@@ -7,8 +6,8 @@ import copy
 from helpers import *
 from printHelpers import *
 
-def SRT(processList, f, alpha, contextSwitchTime):
 
+def SRT(processList, f, alpha, contextSwitchTime):
     algo = 'SRT'
     numContextSwitches = 0
     CPUBurstStart = 0
@@ -55,7 +54,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
                     printStartCPU(time, currentProcess, currentTau, burstTime, readyQueue)
                 else:
                     printRestartCPU(time, currentProcess, burstTime, originalBurstTime, currentTau, readyQueue)
-            
+
             # end running a process -- time == end time of the process
             if time == runningEnd:
                 currentProcess = runningProcess
@@ -67,8 +66,9 @@ def SRT(processList, f, alpha, contextSwitchTime):
                 else:
                     # If there are more CPU bursts, then it's time for IO block
                     currentTau = processes[currentProcess].getTau()
-                    printCPUComplete(time, currentProcess, currentTau, processes[currentProcess].getNumCPUBursts(), readyQueue)
-                    
+                    printCPUComplete(time, currentProcess, currentTau, processes[currentProcess].getNumCPUBursts(),
+                                     readyQueue)
+
                     blockTime = processes[currentProcess].popCurrIOBurst() + 2
                     burstTime = originalBurstTimes[currentProcess].pop(0)
 
@@ -132,9 +132,10 @@ def SRT(processList, f, alpha, contextSwitchTime):
         time += 1
 
     totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
-    avgCPUBurstTime = CPUBurstStart / totalCPUBursts
+    avgCPUBurstTime = sum([sum(proc.getCPUBurstTimes()) for proc in processList]) / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + contextSwitchTime
-    CPUUtilization = round(100 * CPUBurstStart / (time + 1), 3)
+    CPUUtilization = round((100 * sum([sum(proc.getCPUBurstTimes()) for proc in processList])) / (time + 1), 3)
 
-    writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions, CPUUtilization)
+    writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions,
+              CPUUtilization)

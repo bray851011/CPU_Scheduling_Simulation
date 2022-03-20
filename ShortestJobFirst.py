@@ -1,4 +1,3 @@
-
 '''
 In SJF, processes are stored in the ready queue in order of priority based on their anticipated
 CPU burst times. More speciﬁcally, the process with the shortest CPU burst time will be
@@ -54,7 +53,7 @@ def SJF(processList, f, alpha):
                 useful_time += burstTime
                 CPUBurstEnd += 1
                 printStartCPU(time, currentProcess, processes[currentProcess].getTau(), burstTime, readyQueue)
-            
+
             # end running a process -- time == end time of the process
             if time == runningEnd:
                 currentProcess = runningProcess

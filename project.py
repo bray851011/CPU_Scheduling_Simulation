@@ -7,8 +7,9 @@ from RoundRobin import RR
 from ShortestJobFirst import SJF
 from ShortestRemainingTime import SRT
 
+
 class Rand48(object):
-    
+
     def drand48(self):
         self.Xn = (0x5deece66d * self.Xn + 0xb) % pow(2, 48)
         return self.Xn / pow(2, 48)
@@ -18,7 +19,7 @@ class Rand48(object):
 
 
 class Process:
-    
+
     def __init__(self, processName, arrivalTime, CPUBursts, CPUBurstTimes, IOBurstTimes, tau):
         self.processName = processName
         self.arrivalTime = arrivalTime
@@ -35,29 +36,29 @@ class Process:
 
     def getArrivalTime(self):
         return self.arrivalTime
-    
+
     def getNumCPUBursts(self):
         return self.CPUBursts
-    
+
     def getCPUBurstTimes(self):
         return self.CPUBurstTimes
-    
+
     def getCurrCPUBurst(self):
         return self.CPUBurstTimes[0]
-    
+
     def popCurrCPUBurst(self):
         self.CPUBursts -= 1
         return self.CPUBurstTimes.pop(0)
-    
+
     def getIOBurstTimes(self):
         return self.IOBurstTimes
 
     def getCurrIOBurst(self):
         return self.IOBurstTimes[0]
-    
+
     def popCurrIOBurst(self):
         return self.IOBurstTimes.pop(0)
-    
+
     def getTau(self):
         return self.tau
 
@@ -66,12 +67,10 @@ class Process:
 
 
 def next_exp():
-
     return -math.log(rand.drand48())
 
 
 def printBurstTimes(CPUBurstTimes, IOBurstTimes):
-
     numCPUBursts = len(CPUBurstTimes)
     for i in range(numCPUBursts):
         print(f"--> CPU burst {CPUBurstTimes[i]} ms", end="")
@@ -124,7 +123,7 @@ if __name__ == "__main__":
             numCPUBursts = math.ceil(rand.drand48() * 100)
             if numCPUBursts <= expDstUpperBound:
                 break
-        
+
         while len(CPUBurstTimes) < numCPUBursts:
 
             # Get CPU burst time
@@ -147,7 +146,7 @@ if __name__ == "__main__":
 
         processName = str(chr(i + 65))
         processList.append(Process(processName, arrivalTime, numCPUBursts,
-                                  CPUBurstTimes, IOBurstTimes, TAU))
+                                   CPUBurstTimes, IOBurstTimes, TAU))
 
         print(
             f'Process {processName} (arrival time {arrivalTime} ms) '
@@ -167,4 +166,3 @@ if __name__ == "__main__":
     SRT(copy.deepcopy(processList), output, alpha, contextSwitchTime)
     print()
     RR(copy.deepcopy(processList), output, timeSlice)
-

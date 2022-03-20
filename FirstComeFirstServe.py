@@ -48,7 +48,7 @@ def FCFS(processList, f):
                 useful_time += burstTime
                 CPUBurstEnd += 1
                 printStartCPU(time, runningProcess, -1, burstTime, readyQueue)
-            
+
             # If a CPU burst is complete
             if time == runningEnd:
                 currentProcess = runningProcess
