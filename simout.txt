@@ -13,25 +13,16 @@ Algorithm SJF
 -- total number of preemptions: 0
 -- CPU utilization: 42.184%
 Algorithm SRT
-<<<<<<< HEAD
--- average CPU burst time: 1059.693 ms
+-- average CPU burst time: 1001.296 ms
 -- average wait time: 604.597 ms
--- average turnaround time: 1668.290 ms
+-- average turnaround time: 1609.892 ms
 -- total number of context switches: 548
 -- total number of preemptions: 50
--- CPU utilization: 44.828%
-=======
--- average CPU burst time: 104.000 ms
--- average wait time: 6.875 ms
--- average turnaround time: 114.875 ms
--- total number of context switches: 81
--- total number of preemptions: 1
--- CPU utilization: 10.971%
->>>>>>> 89a867f79d84ea8457351aa9e5d719f15a05c7e3
+-- CPU utilization: 42.358%
 Algorithm RR
--- average CPU burst time: 997.185 ms
--- average wait time: 518.183 ms
--- average turnaround time: 1519.368 ms
--- total number of context switches: 542
--- total number of preemptions: 45
--- CPU utilization: 42.089%
+-- average CPU burst time: 1001.296 ms
+-- average wait time: 580.033 ms
+-- average turnaround time: 1585.328 ms
+-- total number of context switches: 546
+-- total number of preemptions: 48
+-- CPU utilization: 41.840%
