@@ -118,3 +118,4 @@ def SJF(processList, f, alpha):
     CPUUtilization = 100 * CPUBurstStart / (time + 1)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization)
+    print()

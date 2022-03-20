@@ -152,7 +152,7 @@ if __name__ == "__main__":
             f'Process {processName} (arrival time {arrivalTime} ms) '
             f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
             f'(tau {TAU}ms)')
-        # printBurstTimes(CPUBurstTimes, IOBurstTimes)
+        printBurstTimes(CPUBurstTimes, IOBurstTimes)
 
     print()
 
@@ -160,9 +160,9 @@ if __name__ == "__main__":
     output.truncate(0)
 
     FCFS(copy.deepcopy(processList), output)
-    print()
+
     SJF(copy.deepcopy(processList), output, alpha)
-    print()
+
     SRT(copy.deepcopy(processList), output, alpha, contextSwitchTime)
-    print()
+
     RR(copy.deepcopy(processList), output, timeSlice)
