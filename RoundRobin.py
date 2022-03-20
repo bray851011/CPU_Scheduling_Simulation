@@ -8,7 +8,7 @@ import copy
 from helpers import *
 from printHelpers import *
 
-def RR(processList, f, timeSlice):
+def RR(processList, f, timeSlice, contextSwitchTime):
     
     algo = 'RR'
     numContextSwitches = 0
@@ -90,7 +90,7 @@ def RR(processList, f, timeSlice):
                 else:
                     printCPUComplete(time, currentProcess, -1, processes[currentProcess].getNumCPUBursts(), readyQueue)
                     
-                    blockTime = processes[currentProcess].getCurrIOBurst() + 2
+                    blockTime = processes[currentProcess].getCurrIOBurst() + contextSwitchTime / 2
 
                     processes[currentProcess].popCurrIOBurst()
                     originalBurstTimes[currentProcess].pop(0)
@@ -100,7 +100,7 @@ def RR(processList, f, timeSlice):
 
                     blockedProcesses[currentProcess] = unblockTime
 
-            if time == runningEnd + 2:
+            if time == runningEnd + contextSwitchTime / 2:
                 usingCPU = False
 
         # Get processes that have finished their IO block
@@ -121,7 +121,7 @@ def RR(processList, f, timeSlice):
         if not usingCPU and readyQueue:
             nextProcess = readyQueue.pop(0)
             usingCPU = True
-            runningStart = time + 2
+            runningStart = time + contextSwitchTime / 2
             runningEnd = runningStart + processes[nextProcess].getCurrCPUBurst()
             runningProcess = nextProcess
 
@@ -129,8 +129,8 @@ def RR(processList, f, timeSlice):
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                runningStart += 2
-                runningEnd += 2
+                runningStart += contextSwitchTime / 2
+                runningEnd += contextSwitchTime / 2
             nextCutoff = runningStart + timeSlice
 
         waitTime += len(readyQueue)
@@ -138,9 +138,10 @@ def RR(processList, f, timeSlice):
         time += 1
 
     totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
+    CPUBurstStart = sum([sum(proc.getCPUBurstTimes()) for proc in processList])
     avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
-    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
-    CPUUtilization = round(100 * CPUBurstStart / (time + 1), 3)
+    avgTurnaroundTime = (CPUBurstStart + waitTime + numContextSwitches * contextSwitchTime) / totalCPUBursts
+    CPUUtilization = 100 * CPUBurstStart / (time + 1)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions, CPUUtilization)

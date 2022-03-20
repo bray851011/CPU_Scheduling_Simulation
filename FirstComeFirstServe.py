@@ -8,7 +8,7 @@ import copy
 from helpers import *
 from printHelpers import *
 
-def FCFS(processList, f):
+def FCFS(processList, f, contextSwitchTime):
 
     algo = "FCFS"
     numContextSwitches = 0
@@ -59,13 +59,13 @@ def FCFS(processList, f):
                 else:
                     printCPUComplete(time, currentProcess, -1, processes[currentProcess].getNumCPUBursts(), readyQueue)
 
-                    blockTime = processes[currentProcess].popCurrIOBurst() + 2
+                    blockTime = processes[currentProcess].popCurrIOBurst() + contextSwitchTime / 2
 
                     unblockTime = time + blockTime
                     printIOBlock(time, currentProcess, unblockTime, readyQueue)
                     blockedProcesses[currentProcess] = unblockTime
 
-            if time == runningEnd + 2:
+            if time == runningEnd + contextSwitchTime / 2:
                 usingCPU = False
 
         # Get processes that are done with their IO block
@@ -85,7 +85,7 @@ def FCFS(processList, f):
         if not usingCPU and readyQueue:
             usingCPU = True
             nextProcess = readyQueue.pop(0)
-            runningStart = time + 2
+            runningStart = time + contextSwitchTime / 2
             runningEnd = runningStart + processes[nextProcess].popCurrCPUBurst()
             runningProcess = nextProcess
 
@@ -93,17 +93,18 @@ def FCFS(processList, f):
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                runningStart += 2
-                runningEnd += 2
+                runningStart += contextSwitchTime / 2
+                runningEnd += contextSwitchTime / 2
 
         waitTime += len(readyQueue)
 
         time += 1
 
     totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
+    CPUBurstStart = sum([sum(proc.getCPUBurstTimes()) for proc in processList])
     avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
-    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
-    CPUUtilization = round(100 * CPUBurstStart / (time + 1), 3)
+    avgTurnaroundTime = (CPUBurstStart + waitTime + numContextSwitches * contextSwitchTime) / totalCPUBursts
+    CPUUtilization = 100 * CPUBurstStart / (time + 1)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization)

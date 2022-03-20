@@ -159,10 +159,10 @@ if __name__ == "__main__":
     output = open("simout.txt", "a+")
     output.truncate(0)
 
-    FCFS(copy.deepcopy(processList), output)
+    FCFS(copy.deepcopy(processList), output, contextSwitchTime)
     print()
-    SJF(copy.deepcopy(processList), output, alpha)
+    SJF(copy.deepcopy(processList), output, alpha, contextSwitchTime)
     print()
     SRT(copy.deepcopy(processList), output, alpha, contextSwitchTime)
     print()
-    RR(copy.deepcopy(processList), output, timeSlice)
+    RR(copy.deepcopy(processList), output, timeSlice, contextSwitchTime)

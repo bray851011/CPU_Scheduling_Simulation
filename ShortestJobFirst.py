@@ -8,7 +8,7 @@ import copy
 from helpers import *
 from printHelpers import *
 
-def SJF(processList, f, alpha):
+def SJF(processList, f, alpha, contextSwitchTime):
 
     # analysis variable
     algo = 'SJF'
@@ -67,7 +67,7 @@ def SJF(processList, f, alpha):
                     currentTau = processes[currentProcess].getTau()
                     printCPUComplete(time, currentProcess, currentTau, processes[currentProcess].getNumCPUBursts(), readyQueue)
 
-                    blockTime = processes[currentProcess].popCurrIOBurst() + 2
+                    blockTime = processes[currentProcess].popCurrIOBurst() + contextSwitchTime / 2
 
                     # update tau <- alpha * burst time + (1 - alpha) * tau
                     newTau = updateTau(alpha, runningEnd - runningStart, currentTau)
@@ -78,8 +78,8 @@ def SJF(processList, f, alpha):
                     printIOBlock(time, currentProcess, unblockTime, readyQueue)
                     blockedProcesses[currentProcess] = unblockTime
 
-            # wait for another 2ms for cpu to be reused
-            if time == runningEnd + 2:
+            # wait for another contextSwitchTime / 2 ms for cpu to be reused
+            if time == runningEnd + contextSwitchTime / 2:
                 usingCPU = False
 
         for proc, unblockTime in blockedProcesses.items():
@@ -95,7 +95,7 @@ def SJF(processList, f, alpha):
         if not usingCPU and len(readyQueue):
             nextProcess = readyQueue.pop(0)
             usingCPU = True
-            runningStart = time + 2
+            runningStart = time + contextSwitchTime / 2
             runningEnd = time + processes[nextProcess].getCurrCPUBurst() + 2
             processes[nextProcess].popCurrCPUBurst()
             runningProcess = nextProcess
@@ -104,17 +104,18 @@ def SJF(processList, f, alpha):
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                runningStart += 2
-                runningEnd += 2
+                runningStart += contextSwitchTime / 2
+                runningEnd += contextSwitchTime / 2
 
         waitTime += addWaitTime(prevReadyQueue, readyQueue)
 
         time += 1
 
     totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
+    CPUBurstStart = sum([sum(proc.getCPUBurstTimes()) for proc in processList])
     avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
-    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
-    CPUUtilization = round(100 * CPUBurstStart / (time + 1), 3)
+    avgTurnaroundTime = (CPUBurstStart + waitTime + numContextSwitches * contextSwitchTime) / totalCPUBursts
+    CPUUtilization = 100 * CPUBurstStart / (time + 1)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization)

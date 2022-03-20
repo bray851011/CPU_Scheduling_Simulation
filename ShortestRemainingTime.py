@@ -69,7 +69,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
                     printCPUComplete(time, currentProcess, currentTau, processes[currentProcess].getNumCPUBursts(),
                                      readyQueue)
 
-                    blockTime = processes[currentProcess].popCurrIOBurst() + 2
+                    blockTime = processes[currentProcess].popCurrIOBurst() + contextSwitchTime / 2
                     burstTime = originalBurstTimes[currentProcess].pop(0)
 
                     # update tau <- alpha * burst time + (1 - alpha) * tau
@@ -81,8 +81,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
                     printIOBlock(time, currentProcess, unblockTime, readyQueue)
                     blockedProcesses[currentProcess] = unblockTime
 
-            # wait for another 2ms for cpu to be reused
-            if time == runningEnd + 2:
+            # wait for another contextSwitchTime / 2 ms for cpu to be reused
+            if time == runningEnd + contextSwitchTime / 2:
                 usingCPU = False
 
         unblockedProcesses = []
@@ -116,7 +116,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
                 preempted = False
             usingCPU = True
             nextProcess = readyQueue.pop(0)
-            runningStart = time + 2
+            runningStart = time + contextSwitchTime / 2
             runningEnd = runningStart + processes[nextProcess].getCurrCPUBurst()
             runningProcess = nextProcess
 
@@ -124,8 +124,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                runningStart += 2
-                runningEnd += 2
+                runningStart += contextSwitchTime / 2
+                runningEnd += contextSwitchTime / 2
 
         waitTime += len(readyQueue)
 
@@ -136,7 +136,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
     avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
     avgTurnaroundTime = (CPUBurstStart + waitTime + numContextSwitches * contextSwitchTime) / totalCPUBursts
-    CPUUtilization = round((100 * CPUBurstStart) / (time + 1), 3)
+    CPUUtilization = 100 * CPUBurstStart / (time + 1)
+    # CPUUtilization = round((100 * CPUBurstStart) / (time + 1), 3)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions,
               CPUUtilization)
