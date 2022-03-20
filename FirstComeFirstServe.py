@@ -19,23 +19,20 @@ def FCFS(processList, f):
 
     printStartSimulator(algo)
 
-    arrivalTimeDict = {}
-    processes = {}
     readyQueue = []
-
+    processes = {}
+    arrivalTimes = {}
     for process in processList:
-        arrivalTimeDict[process.getArrivalTime()] = process.getName()
         processes[process.getName()] = copy.deepcopy(process)
-
+        arrivalTimes[process.getArrivalTime()] = copy.deepcopy(process)
 
     time = 0
     usingCPU = False
     runningProcess = ''
-    blockDict = {}
+    blockedProcesses = {}
 
     while True:
 
-        prevReadyQueue = readyQueue
         currentProcess = ''
 
         # If there are no processes left, then simulator is done
@@ -51,11 +48,10 @@ def FCFS(processList, f):
                 useful_time += burstTime
                 CPUBurstEnd += 1
                 printStartCPU(time, runningProcess, -1, burstTime, readyQueue)
-            
+
             # If a CPU burst is complete
             if time == runningEnd:
                 currentProcess = runningProcess
-
                 # If no more CPU bursts
                 if not processes[currentProcess].getNumCPUBursts():
                     printProcessTerminated(time, currentProcess, readyQueue)
@@ -63,38 +59,34 @@ def FCFS(processList, f):
                 else:
                     printCPUComplete(time, currentProcess, -1, processes[currentProcess].getNumCPUBursts(), readyQueue)
 
-                    blockTime = processes[currentProcess].popCurrIOBurstTime() + 2
+                    blockTime = processes[currentProcess].popCurrIOBurst() + 2
 
                     unblockTime = time + blockTime
                     printIOBlock(time, currentProcess, unblockTime, readyQueue)
-
-                    blockDict[currentProcess] = unblockTime, currentProcess
+                    blockedProcesses[currentProcess] = unblockTime
 
             if time == runningEnd + 2:
                 usingCPU = False
 
-        doneProcesses = []
-        for v in blockDict.values():
-            # in case there are multiple processes ending at this time
-            if time == v[0]:
-                doneProcesses.append(v[1])
-
-        doneProcesses.sort()
-        readyQueue += doneProcesses
-        for proc in doneProcesses:
+        # Get processes that are done with their IO block
+        unblockedProcesses = []
+        for proc, unblockTime in blockedProcesses.items():
+            if time == unblockTime:
+                unblockedProcesses.append(proc)
+        unblockedProcesses.sort()
+        readyQueue += unblockedProcesses
+        for proc in unblockedProcesses:
             printIOComplete(time, proc, -1, readyQueue)
 
-        # check if there is a process coming at this time
-        if time in arrivalTimeDict.keys():
-            readyQueue.append(arrivalTimeDict[time])
-            printProcessArrived(time, arrivalTimeDict[time], -1, readyQueue)
+        # Check if there is a process coming at this time
+        getIncomingProcesses(time, None, arrivalTimes, readyQueue, False)
 
         # no process is running and there is at least one ready process
         if not usingCPU and readyQueue:
             usingCPU = True
             nextProcess = readyQueue.pop(0)
             runningStart = time + 2
-            runningEnd = time + processes[nextProcess].popCurrCPUBurst() + 2
+            runningEnd = runningStart + processes[nextProcess].popCurrCPUBurst()
             runningProcess = nextProcess
 
             # context switch
@@ -104,13 +96,14 @@ def FCFS(processList, f):
                 runningStart += 2
                 runningEnd += 2
 
-        waitTime += addWaitTime(prevReadyQueue, readyQueue)
+        waitTime += len(readyQueue)
 
         time += 1
 
-    avgCPUBurstTime = CPUBurstStart / CPUBurstEnd
-    avgWaitTime = waitTime / sum([p.getNumCPUBursts() for p in processList])
+    totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
+    avgCPUBurstTime = CPUBurstStart / totalCPUBursts
+    avgWaitTime = waitTime / totalCPUBursts
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
-    CPUUtilization = round(100 * useful_time / (time + 1), 3)
+    CPUUtilization = round(100 * CPUBurstStart / (time + 1), 3)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization)

@@ -1,5 +1,8 @@
 
-DISPLAY_MAX_T = 1000
+import copy
+
+# DISPLAY_MAX_T = 1000
+DISPLAY_MAX_T = float("inf")
 
 def printStartSimulator(algo):
     print(f"time 0ms: Simulator started for {algo} [Q empty]")
@@ -10,11 +13,12 @@ def printEndSimulator(time, algo):
 
 
 def printReadyQueue(readyQueue):
+    queue = copy.deepcopy(readyQueue)
     ret = '[Q '
-    if not readyQueue:
+    if not queue:
         ret += 'empty]'
     else:
-        for item in readyQueue:
+        for item in queue:
             ret += item
         ret = ret + ']'
     return ret
@@ -26,7 +30,7 @@ def printTau(tau):
 
 
 def printProcessArrived(time, process, tau, readyQueue):
-    if time <= DISPLAY_MAX_T:
+    if time < DISPLAY_MAX_T:
         print(f'time {time}ms: Process {process} ', end='')
         printTau(tau)
         print(f'arrived; added to ready queue', printReadyQueue(readyQueue))
@@ -37,22 +41,23 @@ def printProcessTerminated(time, process, readyQueue):
 
 
 def printStartCPU(time, process, tau, burstTime, readyQueue):
-    if time <= DISPLAY_MAX_T:
+    if time < DISPLAY_MAX_T:
         print(f'time {time}ms: Process {process} ', end='')
         printTau(tau)
         print(f'started using the CPU for {burstTime}ms burst', printReadyQueue(readyQueue))
 
 
-def printRestartCPU(time, process, timeLeft, burstTime, readyQueue):
-    if time <= DISPLAY_MAX_T:
+def printRestartCPU(time, process, timeLeft, burstTime, tau, readyQueue):
+    if time < DISPLAY_MAX_T:
+        print(f'time {time}ms: Process {process} ', end='')
+        printTau(tau)
         print(
-            f'time {time}ms: Process {process} '
             f'started using the CPU for remaining {timeLeft}ms of '
             f'{burstTime}ms burst ', printReadyQueue(readyQueue))
 
 
 def printCPUComplete(time, process, tau, numCPUBursts, readyQueue):
-    if time <= DISPLAY_MAX_T:
+    if time < DISPLAY_MAX_T:
         print(f'time {time}ms: Process {process} ', end='')
         printTau(tau)
         print(
@@ -62,7 +67,7 @@ def printCPUComplete(time, process, tau, numCPUBursts, readyQueue):
             printReadyQueue(readyQueue))
 
 def printIOBlock(time, process, unblockTime, readyQueue):
-    if time <= DISPLAY_MAX_T:
+    if time < DISPLAY_MAX_T:
         print(
             f'time {time}ms: Process {process} '
             f'switching out of CPU; will block on I/O '
@@ -71,14 +76,14 @@ def printIOBlock(time, process, unblockTime, readyQueue):
 
 
 def printIOComplete(time, process, tau, readyQueue):
-    if time <= DISPLAY_MAX_T:
+    if time < DISPLAY_MAX_T:
         print(f'time {time}ms: Process {process} ', end='')
         printTau(tau)
         print(f'completed I/O; added to ready queue', printReadyQueue(readyQueue))
 
 
 def printProcessPreempted(time, process, timeLeft, readyQueue):
-    if time <= DISPLAY_MAX_T:
+    if time < DISPLAY_MAX_T:
         print(
             f'time {time}ms: Time slice expired; '
             f'process {process} preempted with {timeLeft}ms to go',
@@ -86,7 +91,7 @@ def printProcessPreempted(time, process, timeLeft, readyQueue):
 
 
 def printNoPreemption(time, readyQueue):
-    if time <= DISPLAY_MAX_T:
+    if time < DISPLAY_MAX_T:
         print(
             f'time {time}ms: Time slice expired; '
             f'no preemption because ready queue is empty',
@@ -94,9 +99,17 @@ def printNoPreemption(time, readyQueue):
 
 
 def printRecalculateTau(time, prevTau, newTau, process, readyQueue):
-    if time <= DISPLAY_MAX_T:
+    if time < DISPLAY_MAX_T:
         print(
             f'time {time}ms: Recalculated tau from '
             f'{prevTau}ms to {newTau}ms '
             f'for process {process}',
             printReadyQueue(readyQueue))
+
+
+def printPreemption(time, currentProcess, processes, readyQueue):
+    if time < DISPLAY_MAX_T:
+        nextProcess = readyQueue[0]
+        print(
+            f'time {time}ms: Process {nextProcess} (tau {processes[nextProcess].getTau()}ms) completed I/O; '
+            f'preempting {currentProcess}', printReadyQueue(readyQueue))
