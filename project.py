@@ -36,32 +36,45 @@ class Process:
     def getArrivalTime(self):
         return self.arrivalTime
     
-    def getCPUBursts(self):
+    def getNumCPUBursts(self):
         return self.CPUBursts
     
     def getCPUBurstTimes(self):
         return self.CPUBurstTimes
     
+    def getCurrCPUBurst(self):
+        return self.CPUBurstTimes[0]
+    
+    def popCurrCPUBurst(self):
+        self.CPUBursts -= 1
+        return self.CPUBurstTimes.pop(0)
+    
     def getIOBurstTimes(self):
         return self.IOBurstTimes
+
+    def getCurrIOBurst(self):
+        return self.IOBurstTimes[0]
+    
+    def popCurrIOBurstTime(self):
+        return self.IOBurstTimes.pop(0)
     
     def getTau(self):
         return self.tau
 
-    def removeOneCPUBurst(self):
+    def setTau(self, tau):
+        self.tau = tau
+
+    def removeCurrCPUBurst(self):
+        self.CPUBurstTimes.pop(0)
         self.CPUBursts -= 1
 
-    def removeFirstIOBurst(self):
-        self.IOBurstTimes.pop(0)
-
-    def removeFirstCPUBurst(self):
-        self.CPUBurstTimes.pop(0)
+    # def augmentFirstCPUBurst(self, val):
+    #     self.CPUBurstTimes[0] += val
 
 
 def next_exp():
 
     return -math.log(rand.drand48())
-
 
 
 def printBurstTimes(CPUBurstTimes, IOBurstTimes):
@@ -160,7 +173,7 @@ if __name__ == "__main__":
     print()
     SJF(copy.deepcopy(processList), output, alpha)
     print()
-    SRT(copy.deepcopy(processList), output, alpha)
+    SRT(copy.deepcopy(processList), output, alpha, contextSwitchTime)
     print()
     RR(copy.deepcopy(processList), output, timeSlice)
 

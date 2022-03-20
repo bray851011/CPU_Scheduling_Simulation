@@ -4,167 +4,143 @@ The RR algorithm is essentially the FCFS algorithm with predeﬁned time slice t
 If a process completes its CPU burst before a time slice expiration, the next process on the ready queue is immediately context-switched in to use the CPU.
 '''
 
-from helpers import printReadyQueue, writeData, DISPLAY_MAX_T
+import copy
+from helpers import *
+from printHelpers import *
 
-def RR(procsList, f, timeSlice):
+def RR(processList, f, timeSlice):
+    
+    algo = 'RR'
     numContextSwitches = 0
-    count_preemption = 0
-    cpu_burst_time = [0,0]
+    numPreemptions = 0
+    CPUBurstStart = 0
+    CPUBurstEnd = 0
     waitTime = 0
     useful_time = 0
 
     print(f"time 0ms: Simulator started for RR with time slice {timeSlice}ms [Q empty]")
 
     arrivalTimeDict = {}
+    originalBurstTimes = {}
     processes = {}
     readyQueue = []
-    for thread in procsList:
-        arrivalTimeDict[thread.get()[1]] = thread.get()
-        processes[thread.get()[0]] = [*thread.get()]
+    for process in processList:
+        originalBurstTimes[process.getName()] = copy.deepcopy(process.getCPUBurstTimes())
+        arrivalTimeDict[process.getArrivalTime()] = process.get()
+        processes[process.getName()] = copy.deepcopy(process)
 
     time = 0
-    running = [False, '', '', '']
+    usingCPU = False
     blockDict = {}
 
     while True:
 
-        old_read_queue = readyQueue
+        prevReadyQueue = readyQueue
+        currentProcess = ''
 
-        curr_proc = ''
-
-        # no processes left
-        if len(processes.keys()) == 0:
-            print(f"time {time + 1}ms: Simulator ended for RR [Q empty]")
+        # If there are no processes left, then simulator is done
+        if not processes:
+            printEndSimulator(time + 1, algo)
             break
 
-        # print changes to the process
-        if running[0] and time == running[1]:
-            cpu_burst_time[0] += running[2] - running[1]
-            useful_time += running[2] - running[1]
-            cpu_burst_time[1] += 1
-            if time <= DISPLAY_MAX_T:
-                print(
-                    f'time {time}ms: Process {processes[running[3]][0]} '
-                    f'started using the CPU for {running[2] - running[1]}ms burst',
-                    printReadyQueue(readyQueue))
-
-        if running[0]:
-            # preemption occur when ready queue isn't empty
-            if time-running[1]==timeSlice:
-                if len(readyQueue) > 0:
-                    cpu_burst_time[0] -= running[2] - time
-                    count_preemption += 1
-                    curr_proc = running[3]
-                    if time <= DISPLAY_MAX_T:
-                        print(
-                            f'time {time}ms: Time slice expired; '
-                            f'process {curr_proc} preempted with {processes[curr_proc][3][0]-(time-running[1])}ms to go',
-                            printReadyQueue(readyQueue))
-                    
-                    # context switch
-                    processes[curr_proc][3][0] -= timeSlice
-                    running[0] = False
-                    readyQueue.append(curr_proc)
-
-                else: # no preemption
-                    if time <= DISPLAY_MAX_T:
-                        print(
-                            f'time {time}ms: Time slice expired; '
-                            f'no preemption because ready queue is empty',
-                            printReadyQueue(readyQueue))
-
-        if running[0]:
-            # complete a CPU burst
-            if time == running[2]:
-
-                curr_proc = running[3]
-                processes[curr_proc][2] -= 1
-                processes[curr_proc][3].pop(0)
-
-                if len(processes[curr_proc][3]) == 0:
-                    print(f'time {time}ms: Process {curr_proc} terminated',
-                          printReadyQueue(readyQueue))
-                    del processes[curr_proc]
+        if usingCPU:
+            # If a CPU burst is starting
+            if time == runningStart:
+                currentProcess = runningProcess
+                burstTime = runningEnd - runningStart
+                CPUBurstStart += burstTime
+                useful_time += burstTime
+                CPUBurstEnd += 1
+                originalBurstTime = originalBurstTimes[runningProcess][0]
+                # If the current process is a newcomer
+                if burstTime == originalBurstTime:
+                    printStartCPU(time, currentProcess, -1, burstTime, readyQueue)
                 else:
-                    if time <= DISPLAY_MAX_T:
-                        if processes[curr_proc][2] > 1:
-                            print(
-                                f'time {time}ms: Process {processes[curr_proc][0]} '
-                                f'completed a CPU burst; '
-                                f'{processes[curr_proc][2]} bursts to go',
-                            printReadyQueue(readyQueue))
-                        else:
-                            print(
-                                f'time {time}ms: Process {processes[curr_proc][0]} '
-                                f'completed a CPU burst; '
-                                f'{processes[curr_proc][2]} burst to go',
-                                printReadyQueue(readyQueue))
-                    block_time = processes[curr_proc][4][0] + 2
+                    printRestartCPU(time, currentProcess, burstTime, originalBurstTimes[runningProcess][0], readyQueue)
+            
+            # If time slice is over
+            if time == timeSlice + runningStart:
+                # If there's stuff in the ready queue, preempt
+                if readyQueue:
+                    CPUBurstStart -= runningEnd - time
+                    numPreemptions += 1
+                    currentProcess = runningProcess
+                    printProcessPreempted(time, currentProcess, processes[currentProcess].getCPUBurstTimes()[0]-(time-runningStart), readyQueue)
+                    
+                    # Context switch
+                    processes[currentProcess].getCPUBurstTimes()[0] -= timeSlice
+                    usingCPU = False
+                    # Add current process back to ready queue
+                    readyQueue.append(currentProcess)
+                else:
+                    printNoPreemption(time, readyQueue)
+            
+            # If a CPU burst is complete
+            if time == runningEnd:
 
-                    processes[curr_proc][4].pop(0)
+                currentProcess = runningProcess
+                processes[currentProcess].popCurrCPUBurst()
 
-                    if time <= DISPLAY_MAX_T:
-                        print(
-                            f'time {time}ms: Process {processes[curr_proc][0]} '
-                            f'switching out of CPU; will block on I/O '
-                            f'until time {time + block_time}ms',
-                            printReadyQueue(readyQueue))
-                    blockDict[processes[curr_proc][0]] = \
-                        time + block_time, processes[curr_proc][0]
+                # If process has no more CPU bursts, terminate it
+                if not processes[currentProcess].getNumCPUBursts():
+                    printProcessTerminated(time, currentProcess, readyQueue)
+                    del processes[currentProcess]
+                else:
+                    printCPUComplete(time, currentProcess, -1, processes[currentProcess].getNumCPUBursts(), readyQueue)
+                    
+                    blockTime = processes[currentProcess].getCurrIOBurst() + 2
 
-        if running[0]:
-            if time == running[2] + 2:
-                running[0] = False
+                    processes[currentProcess].popCurrIOBurstTime()
+                    originalBurstTimes[currentProcess].pop(0)
 
-        completed_proc = []
-        for v in blockDict.values():
+                    unblockTime = time + blockTime
+                    printIOBlock(time, currentProcess, unblockTime, readyQueue)
 
+                    blockDict[currentProcess] = unblockTime
+
+            if time == runningEnd + 2:
+                usingCPU = False
+
+        # Get processes that have finished their IO block
+        unblockedProcesses = []
+        for proc, v in blockDict.items():
             # in case there are multiple processes ending at this time
-            if time == v[0]:
-                completed_proc.append(v[1])
+            if time == v:
+                unblockedProcesses.append(proc)
+        unblockedProcesses.sort()
+        readyQueue += unblockedProcesses
+        for process in unblockedProcesses:
+            printIOComplete(time, process, -1, readyQueue)
 
-        completed_proc.sort()
-        readyQueue += completed_proc
-        for proc in completed_proc:
-            if time <= DISPLAY_MAX_T:
-                print(
-                    f'time {time}ms: Process {proc} '
-                    f'completed I/O; added to ready queue',
-                    printReadyQueue(readyQueue))
+        # Check if there's a process coming at this time
+        checkIncomingProcesses(time, arrivalTimeDict, readyQueue)
+        # if time in arrivalTimeDict.keys():
+        #     readyQueue.append(arrivalTimeDict[time][0])
+        #     printProcessArrived(time, arrivalTimeDict[time][0], -1, readyQueue)
 
-        # check if there is a process coming at this time
-        if time in arrivalTimeDict.keys():
-            readyQueue.append(arrivalTimeDict[time][0])
-            if time <= DISPLAY_MAX_T:
-                print(
-                    f'time {time}ms: Process {arrivalTimeDict[time][0]} arrived; '
-                    f'added to ready queue', printReadyQueue(readyQueue))
-
-        # no process is running and there is at least one ready process
-        if not running[0] and len(readyQueue) > 0:
-            nextProcess = readyQueue[0]
-            readyQueue.pop(0)
-            running[0] = True
-            running[1] = time + 2  # start
-            running[2] = time + processes[nextProcess][3][0] + 2  # end
-            running[3] = nextProcess
+        # If there aren't any processes running but there are some in the ready queue
+        if not usingCPU and readyQueue:
+            nextProcess = readyQueue.pop(0)
+            usingCPU = True
+            runningStart = time + 2
+            runningEnd = time + processes[nextProcess].getCurrCPUBurst() + 2
+            runningProcess = nextProcess
 
             # context switch
             numContextSwitches += 1
 
-            if curr_proc != '' and nextProcess != curr_proc:
-                running[1] += 2
-                running[2] += 2
+            if currentProcess != '' and nextProcess != currentProcess:
+                runningStart += 2
+                runningEnd += 2
 
-        for p in set(old_read_queue).intersection(readyQueue):
-            waitTime += 1
+        waitTime += addWaitTime(prevReadyQueue, readyQueue)
 
         time += 1
 
-    avgCPUBurstTime = cpu_burst_time[0] / cpu_burst_time[1]
-    avgWaitTime = waitTime / sum([p.get()[2] for p in procsList])
-    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
-    CPUUtilization = round( 100 * useful_time / (time+1), 3)
 
-    data = avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, count_preemption, CPUUtilization
-    writeData(f, "RR", data)
+    avgCPUBurstTime = CPUBurstStart / CPUBurstEnd
+    avgWaitTime = waitTime / sum([p.getNumCPUBursts() for p in processList])
+    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
+    CPUUtilization = round(100 * useful_time / (time + 1), 3)
+
+    writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions, CPUUtilization)

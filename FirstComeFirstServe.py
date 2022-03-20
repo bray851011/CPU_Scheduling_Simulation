@@ -5,96 +5,76 @@ with an "infinite" time slice).
 '''
 
 import copy
-from helpers import printReadyQueue, writeData, DISPLAY_MAX_T
+from helpers import *
+from printHelpers import *
 
 def FCFS(processList, f):
 
+    algo = "FCFS"
     numContextSwitches = 0
-    cpu_burst_time = [0, 0]
+    CPUBurstStart = 0
+    CPUBurstEnd = 0
     waitTime = 0
     useful_time = 0
 
-    print("time 0ms: Simulator started for FCFS [Q empty]")
+    printStartSimulator(algo)
 
     arrivalTimeDict = {}
     processes = {}
     readyQueue = []
 
     for process in processList:
-        arrivalTimeDict[process.getArrivalTime()] = copy.deepcopy(process)
+        arrivalTimeDict[process.getArrivalTime()] = process.getName()
         processes[process.getName()] = copy.deepcopy(process)
 
 
     time = 0
-    running = [False, '', '', '']
+    usingCPU = False
+    runningProcess = ''
     blockDict = {}
 
     while True:
 
-        old_read_queue = readyQueue
-
+        prevReadyQueue = readyQueue
         currentProcess = ''
 
-        # no processes left
-        if len(processes) == 0:
-            print(f"time {time + 1}ms: Simulator ended for FCFS [Q empty]")
+        # If there are no processes left, then simulator is done
+        if not processes:
+            printEndSimulator(time + 1, algo)
             break
 
-        # print changes to the process
-        if running[0]:
-            if time == running[1]:
-                cpu_burst_time[0] += running[2] - running[1]
-                useful_time += running[2] - running[1]
-                cpu_burst_time[1] += 1
-                if time <= DISPLAY_MAX_T:
-                    print(
-                        f'time {time}ms: Process {processes[running[3]].getName()} '
-                        f'started using the CPU for {running[2] - running[1]}ms burst',
-                        printReadyQueue(readyQueue))
+        if usingCPU:
+            # If a CPU burst is starting
+            if time == runningStart:
+                burstTime = runningEnd - runningStart
+                CPUBurstStart += burstTime
+                useful_time += burstTime
+                CPUBurstEnd += 1
+                printStartCPU(time, runningProcess, -1, burstTime, readyQueue)
+            
+            # If a CPU burst is complete
+            if time == runningEnd:
+                currentProcess = runningProcess
 
-        if running[0]:
-            if time == running[2]:
-                currentProcess = running[3]
-
-                if len(processes[running[3]].getCPUBurstTimes()) == 0:
-                    print(f'time {time}ms: Process {running[3]} terminated',
-                          printReadyQueue(readyQueue))
-                    del processes[running[3]]
+                # If no more CPU bursts
+                if not processes[currentProcess].getNumCPUBursts():
+                    printProcessTerminated(time, currentProcess, readyQueue)
+                    del processes[currentProcess]
                 else:
-                    if processes[running[3]].getCPUBursts() > 1:
-                        if time <= DISPLAY_MAX_T:
-                            print(
-                                f'time {time}ms: Process {processes[running[3]].getName()} '
-                                f'completed a CPU burst; '
-                                f'{processes[running[3]].getCPUBursts()} bursts to go',
-                                printReadyQueue(readyQueue))
-                    else:
-                        if time <= DISPLAY_MAX_T:
-                            print(
-                                f'time {time}ms: Process {processes[running[3]].getName()} '
-                                f'completed a CPU burst; '
-                                f'{processes[running[3]].getCPUBursts()} burst to go',
-                                printReadyQueue(readyQueue))
-                    block_time = processes[running[3]].getIOBurstTimes()[0] + 2
+                    printCPUComplete(time, currentProcess, -1, processes[currentProcess].getNumCPUBursts(), readyQueue)
 
-                    processes[running[3]].removeFirstIOBurst()
+                    blockTime = processes[currentProcess].popCurrIOBurstTime() + 2
 
-                    if time <= DISPLAY_MAX_T:
-                        print(
-                            f'time {time}ms: Process {processes[running[3]].getName()} '
-                            f'switching out of CPU; will block on I/O '
-                            f'until time {time + block_time}ms',
-                            printReadyQueue(readyQueue))
-                    blockDict[processes[running[3]].getName()] = \
-                        time + block_time, processes[running[3]].getName()
+                    unblockTime = time + blockTime
+                    printIOBlock(time, currentProcess, unblockTime, readyQueue)
 
-        if running[0]:
-            if time == running[2] + 2:
-                running[0] = False
+                    blockDict[currentProcess] = unblockTime, currentProcess
+
+            if time == runningEnd + 2:
+                usingCPU = False
 
         doneProcesses = []
         for v in blockDict.values():
-
             # in case there are multiple processes ending at this time
             if time == v[0]:
                 doneProcesses.append(v[1])
@@ -102,47 +82,35 @@ def FCFS(processList, f):
         doneProcesses.sort()
         readyQueue += doneProcesses
         for proc in doneProcesses:
-            if time <= DISPLAY_MAX_T:
-                print(
-                    f'time {time}ms: Process {proc} '
-                    f'completed I/O; added to ready queue',
-                    printReadyQueue(readyQueue))
+            printIOComplete(time, proc, -1, readyQueue)
 
         # check if there is a process coming at this time
         if time in arrivalTimeDict.keys():
-            readyQueue.append(arrivalTimeDict[time].getName())
-            if time <= DISPLAY_MAX_T:
-                print(
-                    f'time {time}ms: Process {arrivalTimeDict[time].getName()} arrived; '
-                    f'added to ready queue', printReadyQueue(readyQueue))
+            readyQueue.append(arrivalTimeDict[time])
+            printProcessArrived(time, arrivalTimeDict[time], -1, readyQueue)
 
         # no process is running and there is at least one ready process
-        if not running[0] and len(readyQueue) > 0:
-            nextProcess = readyQueue[0]
-            readyQueue.pop(0)
-            running[0] = True
-            running[1] = time + 2  # start
-            running[2] = time + processes[nextProcess].getCPUBurstTimes()[0] + 2  # end
-            processes[nextProcess].removeFirstCPUBurst()
-            processes[nextProcess].removeOneCPUBurst()
-            running[3] = nextProcess
+        if not usingCPU and readyQueue:
+            usingCPU = True
+            nextProcess = readyQueue.pop(0)
+            runningStart = time + 2
+            runningEnd = time + processes[nextProcess].popCurrCPUBurst() + 2
+            runningProcess = nextProcess
 
             # context switch
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                running[1] += 2
-                running[2] += 2
+                runningStart += 2
+                runningEnd += 2
 
-        for p in set(old_read_queue).intersection(readyQueue):
-            waitTime += 1
+        waitTime += addWaitTime(prevReadyQueue, readyQueue)
 
         time += 1
 
-    avgCPUBurstTime = cpu_burst_time[0] / cpu_burst_time[1]
-    avgWaitTime = waitTime / sum([p.get()[2] for p in processList])
+    avgCPUBurstTime = CPUBurstStart / CPUBurstEnd
+    avgWaitTime = waitTime / sum([p.getNumCPUBursts() for p in processList])
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
-    CPUUtilization = round( 100 * useful_time / (time+1), 3)
+    CPUUtilization = round(100 * useful_time / (time + 1), 3)
 
-    data = avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization
-    writeData(f, "FCFS", data)
+    writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization)
