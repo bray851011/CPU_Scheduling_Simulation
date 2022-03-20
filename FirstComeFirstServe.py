@@ -59,13 +59,13 @@ def FCFS(processList, f, contextSwitchTime):
                 else:
                     printCPUComplete(time, currentProcess, -1, processes[currentProcess].getNumCPUBursts(), readyQueue)
 
-                    blockTime = processes[currentProcess].popCurrIOBurst() + 2
+                    blockTime = processes[currentProcess].popCurrIOBurst() + int(contextSwitchTime / 2)
 
                     unblockTime = time + blockTime
                     printIOBlock(time, currentProcess, unblockTime, readyQueue)
                     blockedProcesses[currentProcess] = unblockTime
 
-            if time == runningEnd + 2:
+            if time == runningEnd + int(contextSwitchTime / 2):
                 usingCPU = False
 
         # Get processes that are done with their IO block
@@ -85,7 +85,7 @@ def FCFS(processList, f, contextSwitchTime):
         if not usingCPU and readyQueue:
             usingCPU = True
             nextProcess = readyQueue.pop(0)
-            runningStart = time + 2
+            runningStart = time + int(contextSwitchTime / 2)
             runningEnd = runningStart + processes[nextProcess].popCurrCPUBurst()
             runningProcess = nextProcess
 
@@ -93,8 +93,8 @@ def FCFS(processList, f, contextSwitchTime):
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                runningStart += 2
-                runningEnd += 2
+                runningStart += int(contextSwitchTime / 2)
+                runningEnd += int(contextSwitchTime / 2)
 
         waitTime += len(readyQueue)
 
