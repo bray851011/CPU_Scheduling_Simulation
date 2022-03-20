@@ -131,10 +131,11 @@ def SRT(processList, f, alpha, contextSwitchTime):
         time += 1
 
     totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
-    avgCPUBurstTime = sum([sum(proc.getCPUBurstTimes()) for proc in processList]) / totalCPUBursts
+    CPUBurstStart = sum([sum(proc.getCPUBurstTimes()) for proc in processList])
+    avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + contextSwitchTime
-    CPUUtilization = round((100 * sum([sum(proc.getCPUBurstTimes()) for proc in processList])) / (time + 1), 3)
+    CPUUtilization = round((100 * CPUBurstStart) / (time + 1), 3)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions,
               CPUUtilization)
