@@ -94,6 +94,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
             readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
             nextProcess = readyQueue[0]
             tempRunningTime = time - runningStart
+            # if time == 128127:
+            #     print('')
             if usingCPU and processes[nextProcess].getTau() < processes[runningProcess].getTau() - tempRunningTime:
                 printPreemption(time, runningProcess, processes, readyQueue)
                 preempted = True
@@ -137,7 +139,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
     avgWaitTime = waitTime / totalCPUBursts
     avgTurnaroundTime = (CPUBurstStart + waitTime + numContextSwitches * contextSwitchTime) / totalCPUBursts
     CPUUtilization = 100 * CPUBurstStart / (time + 1)
-    # CPUUtilization = round((100 * CPUBurstStart) / (time + 1), 3)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions,
               CPUUtilization)
+    print()
