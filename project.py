@@ -152,17 +152,17 @@ if __name__ == "__main__":
             f'Process {processName} (arrival time {arrivalTime} ms) '
             f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
             f'(tau {TAU}ms)')
-        printBurstTimes(CPUBurstTimes, IOBurstTimes)
+        # printBurstTimes(CPUBurstTimes, IOBurstTimes)
 
     print()
 
     output = open("simout.txt", "a+")
     output.truncate(0)
 
-    FCFS(copy.deepcopy(processList), output)
+    # FCFS(copy.deepcopy(processList), output)
 
-    SJF(copy.deepcopy(processList), output, alpha)
+    # SJF(copy.deepcopy(processList), output, alpha)
 
     SRT(copy.deepcopy(processList), output, alpha, contextSwitchTime)
 
-    RR(copy.deepcopy(processList), output, timeSlice)
+    # RR(copy.deepcopy(processList), output, timeSlice)

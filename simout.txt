@@ -1,0 +1,7 @@
+Algorithm SRT
+-- average CPU burst time: 1001.296 ms
+-- average wait time: 645.663 ms
+-- average turnaround time: 1651.304 ms
+-- total number of context switches: 541
+-- total number of preemptions: 43
+-- CPU utilization: 41.580%
