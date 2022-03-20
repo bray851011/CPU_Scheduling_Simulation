@@ -1,8 +1,8 @@
 
 import copy
 
-DISPLAY_MAX_T = 1000
-# DISPLAY_MAX_T = float("inf")
+# DISPLAY_MAX_T = 1000
+DISPLAY_MAX_T = float("inf")
 
 def printStartSimulator(algo):
     print(f"time 0ms: Simulator started for {algo} [Q empty]")

@@ -31,6 +31,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
 
     usingCPU = False
     preempted = False
+    isSwitching = False
 
     blockedProcesses = {}
 
@@ -46,6 +47,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
         if usingCPU:
             # start running a process -- time == start time of the process
             if time == runningStart:
+                isSwitching = False
                 burstTime = runningEnd - runningStart
                 currentProcess = runningProcess
                 CPUBurstStart += burstTime
@@ -120,13 +122,13 @@ def SRT(processList, f, alpha, contextSwitchTime):
         if not usingCPU and readyQueue:
             if preempted:
                 readyQueue.insert(1, runningProcess)
-                # readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
                 preempted = False
             usingCPU = True
             nextProcess = readyQueue.pop(0)
             runningStart = time + hCST
             runningEnd = runningStart + processes[nextProcess].getCurrCPUBurst()
             runningProcess = nextProcess
+            isSwitching = True
 
             # Context switch
             numContextSwitches += 1
