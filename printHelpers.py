@@ -107,8 +107,9 @@ def printRecalculateTau(time, prevTau, newTau, process, readyQueue):
             printReadyQueue(readyQueue))
 
 
-def printPreemption(time, currentProcess, nextProcess, processes, readyQueue):
+def printPreemption(time, currentProcess, processes, readyQueue):
     if time < DISPLAY_MAX_T:
+        nextProcess = readyQueue[0]
         print(
             f'time {time}ms: Process {nextProcess} (tau {processes[nextProcess].getTau()}ms) completed I/O; '
             f'preempting {currentProcess}', printReadyQueue(readyQueue))

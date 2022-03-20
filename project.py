@@ -160,7 +160,10 @@ if __name__ == "__main__":
     output.truncate(0)
 
     FCFS(copy.deepcopy(processList), output, contextSwitchTime)
+
     SJF(copy.deepcopy(processList), output, alpha, contextSwitchTime)
+
     SRT(copy.deepcopy(processList), output, alpha, contextSwitchTime)
+
     RR(copy.deepcopy(processList), output, timeSlice, contextSwitchTime)
 

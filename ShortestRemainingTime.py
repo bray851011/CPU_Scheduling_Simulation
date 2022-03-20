@@ -69,7 +69,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
                     printCPUComplete(time, currentProcess, currentTau, processes[currentProcess].getNumCPUBursts(),
                                      readyQueue)
 
-                    blockTime = processes[currentProcess].popCurrIOBurst() + contextSwitchTime / 2
+                    blockTime = processes[currentProcess].popCurrIOBurst() + 2
                     burstTime = originalBurstTimes[currentProcess].pop(0)
 
                     # update tau <- alpha * burst time + (1 - alpha) * tau
@@ -81,45 +81,48 @@ def SRT(processList, f, alpha, contextSwitchTime):
                     printIOBlock(time, currentProcess, unblockTime, readyQueue)
                     blockedProcesses[currentProcess] = unblockTime
 
-            # wait for another contextSwitchTime / 2 ms for cpu to be reused
-            if time == runningEnd + contextSwitchTime / 2:
+            # wait for another 2ms for cpu to be reused
+            if time == runningEnd + 2:
                 usingCPU = False
 
         unblockedProcesses = []
         for proc, unblockTime in blockedProcesses.items():
             if time == unblockTime:
-                # readyQueue.append(copy.deepcopy(proc))
+                readyQueue.append(copy.deepcopy(proc))
                 unblockedProcesses.append(copy.deepcopy(proc))
         if unblockedProcesses:
-            unblockedProcesses.sort(key=lambda x: (processes[x].getName(), x))
-            while unblockedProcesses:
-                nextProcess = unblockedProcesses.pop(0)
-                if usingCPU:
-                    tempRunningTime = time - runningStart
-                    extra = originalBurstTimes[runningProcess][0] - processes[runningProcess].getCurrCPUBurst()
-                    if processes[nextProcess].getTau() < processes[runningProcess].getTau() - tempRunningTime - extra:
-                        printPreemption(time, runningProcess, nextProcess, processes, readyQueue)
-                        numPreemptions += 1
-                        processes[runningProcess].getCPUBurstTimes()[0] -= tempRunningTime
-                        runningEnd = time
-                        CPUBurstStart -= tempRunningTime
-                        readyQueue.insert(0, runningProcess)
-                        readyQueue.insert(0, nextProcess)
-                        break
-                readyQueue.append(nextProcess)
-                printIOComplete(time, nextProcess, processes[nextProcess].getTau(), readyQueue)
-        for proc in unblockedProcesses:
-            readyQueue.append(nextProcess)
-            printIOComplete(time, proc, processes[proc].getTau(), readyQueue)
+            if usingCPU:
+                readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
+                nextProcess = readyQueue[0]
+                tempRunningTime = time - runningStart
+                extra = originalBurstTimes[runningProcess][0] - processes[runningProcess].getCurrCPUBurst()
+                if processes[nextProcess].getTau() < processes[runningProcess].getTau() - tempRunningTime - extra:
+                    printPreemption(time, runningProcess, processes, readyQueue)
+                    preempted = True
+                    numPreemptions += 1
+                    processes[runningProcess].getCPUBurstTimes()[0] -= tempRunningTime
+                    runningEnd = time
+                    CPUBurstStart -= tempRunningTime
+                    if nextProcess in unblockedProcesses:
+                        unblockedProcesses.remove(nextProcess)
+                else:
+                    if time == 858829:
+                        readyQueue.sort(key=lambda x: (processes[x].getName(), x))
+            for proc in unblockedProcesses:
+                printIOComplete(time, proc, processes[proc].getTau(), readyQueue)
 
         # Check if there's a process coming at this time
         getIncomingProcesses(time, processes, arrivalTimes, readyQueue, True)
 
         # Get next ready process if CPU isn't being used
         if not usingCPU and readyQueue:
+            if preempted:
+                readyQueue.insert(1, runningProcess)
+                # readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
+                preempted = False
             usingCPU = True
             nextProcess = readyQueue.pop(0)
-            runningStart = time + contextSwitchTime / 2
+            runningStart = time + 2
             runningEnd = runningStart + processes[nextProcess].getCurrCPUBurst()
             runningProcess = nextProcess
 
@@ -127,8 +130,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                runningStart += contextSwitchTime / 2
-                runningEnd += contextSwitchTime / 2
+                runningStart += 2
+                runningEnd += 2
 
         waitTime += len(readyQueue)
 
