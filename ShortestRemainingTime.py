@@ -88,8 +88,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
         unblockedProcesses = []
         for proc, unblockTime in blockedProcesses.items():
             if time == unblockTime:
-                readyQueue.append(proc)
-                unblockedProcesses.append(proc)
+                readyQueue.append(copy.deepcopy(proc))
+                unblockedProcesses.append(copy.deepcopy(proc))
         if unblockedProcesses:
             readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
             nextProcess = readyQueue[0]
@@ -101,7 +101,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
                 processes[runningProcess].getCPUBurstTimes()[0] -= tempRunningTime
                 runningEnd = time
                 CPUBurstStart -= tempRunningTime
-                unblockedProcesses.remove(nextProcess)
+                if nextProcess in unblockedProcesses:
+                    unblockedProcesses.remove(nextProcess)
             for proc in unblockedProcesses:
                 printIOComplete(time, proc, processes[proc].getTau(), readyQueue)
 
@@ -134,7 +135,7 @@ def SRT(processList, f, alpha, contextSwitchTime):
     CPUBurstStart = sum([sum(proc.getCPUBurstTimes()) for proc in processList])
     avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
-    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + contextSwitchTime
+    avgTurnaroundTime = (CPUBurstStart + waitTime + numContextSwitches * contextSwitchTime) / totalCPUBursts
     CPUUtilization = round((100 * CPUBurstStart) / (time + 1), 3)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions,

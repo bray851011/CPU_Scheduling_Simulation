@@ -30,6 +30,7 @@ def RR(processList, f, timeSlice):
         processes[process.getName()] = copy.deepcopy(process)
 
     time = 0
+    nextCutoff = 0
     usingCPU = False
     blockedProcesses = {}
 
@@ -58,25 +59,27 @@ def RR(processList, f, timeSlice):
                     printRestartCPU(time, currentProcess, burstTime, originalBurstTime, -1, readyQueue)
             
             # If time slice is over
-            if time == timeSlice + runningStart:
+            if time == nextCutoff:
                 # If there's stuff in the ready queue, preempt
                 if readyQueue:
                     CPUBurstStart -= (runningEnd - time)
                     numPreemptions += 1
                     currentProcess = runningProcess
-                    printProcessPreempted(time, currentProcess, processes[currentProcess].getCPUBurstTimes()[0]-(time-runningStart), readyQueue)
+                    processes[currentProcess].getCPUBurstTimes()[0] -= (time-runningStart)
+                    printProcessPreempted(time, currentProcess, processes[currentProcess].getCPUBurstTimes()[0], readyQueue)
                     
                     # Context switch
-                    processes[currentProcess].getCPUBurstTimes()[0] -= timeSlice
                     usingCPU = False
                     # Add current process back to ready queue
                     readyQueue.append(currentProcess)
                 else:
+                    nextCutoff += timeSlice
                     printNoPreemption(time, readyQueue)
             
             # If a CPU burst is complete
             if time == runningEnd:
 
+                nextCutoff += timeSlice
                 currentProcess = runningProcess
                 processes[currentProcess].popCurrCPUBurst()
 
@@ -119,7 +122,7 @@ def RR(processList, f, timeSlice):
             nextProcess = readyQueue.pop(0)
             usingCPU = True
             runningStart = time + 2
-            runningEnd = time + processes[nextProcess].getCurrCPUBurst() + 2
+            runningEnd = runningStart + processes[nextProcess].getCurrCPUBurst()
             runningProcess = nextProcess
 
             # context switch
@@ -128,6 +131,7 @@ def RR(processList, f, timeSlice):
             if currentProcess != '' and nextProcess != currentProcess:
                 runningStart += 2
                 runningEnd += 2
+            nextCutoff = runningStart + timeSlice
 
         waitTime += len(readyQueue)
 
@@ -136,7 +140,7 @@ def RR(processList, f, timeSlice):
     totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
     avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
-    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4.1
+    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
     CPUUtilization = round(100 * CPUBurstStart / (time + 1), 3)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions, CPUUtilization)

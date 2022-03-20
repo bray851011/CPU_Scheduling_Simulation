@@ -53,7 +53,7 @@ def printRestartCPU(time, process, timeLeft, burstTime, tau, readyQueue):
         printTau(tau)
         print(
             f'started using the CPU for remaining {timeLeft}ms of '
-            f'{burstTime}ms burst ', printReadyQueue(readyQueue))
+            f'{burstTime}ms burst', printReadyQueue(readyQueue))
 
 
 def printCPUComplete(time, process, tau, numCPUBursts, readyQueue):
