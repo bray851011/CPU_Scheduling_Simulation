@@ -115,6 +115,6 @@ def SJF(processList, f, alpha):
     avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
     avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
-    CPUUtilization = round(100 * CPUBurstStart / (time + 1), 3)
+    CPUUtilization = 100 * CPUBurstStart / (time + 1)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization)
