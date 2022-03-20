@@ -136,7 +136,7 @@ def RR(processList, f, timeSlice):
     totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
     avgCPUBurstTime = CPUBurstStart / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
-    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4.1
+    avgTurnaroundTime = avgCPUBurstTime + avgWaitTime + 4
     CPUUtilization = round(100 * CPUBurstStart / (time + 1), 3)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, numPreemptions, CPUUtilization)

@@ -153,7 +153,7 @@ if __name__ == "__main__":
             f'Process {processName} (arrival time {arrivalTime} ms) '
             f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
             f'(tau {TAU}ms)')
-        printBurstTimes(CPUBurstTimes, IOBurstTimes)
+        # printBurstTimes(CPUBurstTimes, IOBurstTimes)
 
     print()
 
