@@ -17,6 +17,7 @@ def SJF(processList, f, alpha, contextSwitchTime):
     CPUBurstEnd = 0
     waitTime = 0
     useful_time = 0
+    hCST = int(contextSwitchTime / 2)
 
     printStartSimulator(algo)
 
@@ -67,7 +68,7 @@ def SJF(processList, f, alpha, contextSwitchTime):
                     currentTau = processes[currentProcess].getTau()
                     printCPUComplete(time, currentProcess, currentTau, processes[currentProcess].getNumCPUBursts(), readyQueue)
 
-                    blockTime = processes[currentProcess].popCurrIOBurst() + contextSwitchTime / 2
+                    blockTime = processes[currentProcess].popCurrIOBurst() + hCST
 
                     # update tau <- alpha * burst time + (1 - alpha) * tau
                     newTau = updateTau(alpha, runningEnd - runningStart, currentTau)
@@ -79,7 +80,7 @@ def SJF(processList, f, alpha, contextSwitchTime):
                     blockedProcesses[currentProcess] = unblockTime
 
             # wait for another contextSwitchTime / 2 ms for cpu to be reused
-            if time == runningEnd + contextSwitchTime / 2:
+            if time == runningEnd + 2:
                 usingCPU = False
 
         for proc, unblockTime in blockedProcesses.items():
@@ -95,7 +96,7 @@ def SJF(processList, f, alpha, contextSwitchTime):
         if not usingCPU and len(readyQueue):
             nextProcess = readyQueue.pop(0)
             usingCPU = True
-            runningStart = time + contextSwitchTime / 2
+            runningStart = time + 2
             runningEnd = time + processes[nextProcess].getCurrCPUBurst() + 2
             processes[nextProcess].popCurrCPUBurst()
             runningProcess = nextProcess
@@ -104,8 +105,8 @@ def SJF(processList, f, alpha, contextSwitchTime):
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                runningStart += contextSwitchTime / 2
-                runningEnd += contextSwitchTime / 2
+                runningStart += hCST
+                runningEnd += hCST
 
         waitTime += addWaitTime(prevReadyQueue, readyQueue)
 

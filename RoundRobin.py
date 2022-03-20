@@ -17,6 +17,7 @@ def RR(processList, f, timeSlice, contextSwitchTime):
     CPUBurstEnd = 0
     waitTime = 0
     useful_time = 0
+    hCST = int(contextSwitchTime / 2)
 
     print(f"time 0ms: Simulator started for RR with time slice {timeSlice}ms [Q empty]")
 
@@ -90,17 +91,16 @@ def RR(processList, f, timeSlice, contextSwitchTime):
                 else:
                     printCPUComplete(time, currentProcess, -1, processes[currentProcess].getNumCPUBursts(), readyQueue)
                     
-                    blockTime = processes[currentProcess].getCurrIOBurst() + contextSwitchTime / 2
+                    blockTime = processes[currentProcess].getCurrIOBurst() + hCST
 
                     processes[currentProcess].popCurrIOBurst()
                     originalBurstTimes[currentProcess].pop(0)
-
                     unblockTime = time + blockTime
                     printIOBlock(time, currentProcess, unblockTime, readyQueue)
 
                     blockedProcesses[currentProcess] = unblockTime
 
-            if time == runningEnd + contextSwitchTime / 2:
+            if time == runningEnd + 2:
                 usingCPU = False
 
         # Get processes that have finished their IO block
@@ -121,7 +121,7 @@ def RR(processList, f, timeSlice, contextSwitchTime):
         if not usingCPU and readyQueue:
             nextProcess = readyQueue.pop(0)
             usingCPU = True
-            runningStart = time + contextSwitchTime / 2
+            runningStart = time + hCST
             runningEnd = runningStart + processes[nextProcess].getCurrCPUBurst()
             runningProcess = nextProcess
 
@@ -129,8 +129,8 @@ def RR(processList, f, timeSlice, contextSwitchTime):
             numContextSwitches += 1
 
             if currentProcess != '' and nextProcess != currentProcess:
-                runningStart += contextSwitchTime / 2
-                runningEnd += contextSwitchTime / 2
+                runningStart += hCST
+                runningEnd += hCST
             nextCutoff = runningStart + timeSlice
 
         waitTime += len(readyQueue)
