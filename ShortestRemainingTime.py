@@ -1,11 +1,7 @@
-'''
-The SRT algorithm is a preemptive version of the SJF algorithm. In SRT, when a process arrives, before it enters the ready queue, if it has a CPU burst time that is less than the remaining time of the currently running process, a preemption occurs. When such a preemption occurs, the currently running process is added back to the ready queue.
-'''
 
 import copy
 from helpers import *
 from printHelpers import *
-
 
 def SRT(processList, f, alpha, contextSwitchTime):
     
@@ -55,9 +51,6 @@ def SRT(processList, f, alpha, contextSwitchTime):
                 if burstTime == originalBurstTime or burstTime < 0:
                     printStartCPU(time, currentProcess, currentTau, originalBurstTime, readyQueue)
                     if burstTime < 0:
-                        nextProcess = readyQueue[0]
-                        nextProcTau = processes[nextProcess].getTau()
-                        print(f"time {time}ms: Process {nextProcess} (tau {nextProcTau}ms) will preempt {currentProcess}", printReadyQueue(readyQueue))
                         usingCPU = False
                 else:
                     printRestartCPU(time, currentProcess, burstTime, originalBurstTime, currentTau, readyQueue)
@@ -98,8 +91,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
                 readyQueue.append(copy.deepcopy(proc))
                 unblockedProcesses.append(copy.deepcopy(proc))
         if unblockedProcesses:
-            readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
             if usingCPU:
+                readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
                 nextProcess = readyQueue[0]
                 tempRunningTime = time - runningStart
                 extra = originalBurstTimes[runningProcess][0] - processes[runningProcess].getCurrCPUBurst()
@@ -113,9 +106,6 @@ def SRT(processList, f, alpha, contextSwitchTime):
                     CPUBurstStart -= tempRunningTime
                     if nextProcess in unblockedProcesses:
                         unblockedProcesses.remove(nextProcess)
-                # else:
-                #     if time == 858829 or len(readyQueue) == 3:
-                #         readyQueue.sort(key=lambda x: (processes[x].getName(), x))
             for proc in unblockedProcesses:
                 printIOComplete(time, proc, processes[proc].getTau(), readyQueue)
             readyQueue.sort(key=lambda x: (processes[x].getTempTau(), x))

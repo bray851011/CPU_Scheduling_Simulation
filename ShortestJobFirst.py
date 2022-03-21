@@ -1,8 +1,3 @@
-'''
-In SJF, processes are stored in the ready queue in order of priority based on their anticipated
-CPU burst times. More speciﬁcally, the process with the shortest CPU burst time will be
-selected as the next process executed by the CPU.
-'''
 
 import copy
 from helpers import *

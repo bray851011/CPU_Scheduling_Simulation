@@ -94,10 +94,6 @@ if __name__ == "__main__":
     # argv[6], alpha -- constant for SJF and SRT algorithms
     # argv[7], timeSlice -- time slice for RR algorithm
 
-    if len(sys.argv) != 8:
-        print("ERROR: Wrong amount of arguments!")
-        exit()
-
     try:
         numProcesses = int(sys.argv[1])
         seed = int(sys.argv[2])

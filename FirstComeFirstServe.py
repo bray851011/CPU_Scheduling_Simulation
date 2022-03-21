@@ -1,8 +1,3 @@
-'''
-The FCFS algorithm is a non-preemptive algorithm in which processes simply line up in the ready
-queue, waiting to use the CPU. This is your baseline algorithm (and could be implemented as RR
-with an "infinite" time slice).
-'''
 
 import copy
 from helpers import *
