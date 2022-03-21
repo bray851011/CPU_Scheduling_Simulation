@@ -31,7 +31,6 @@ def SRT(processList, f, alpha, contextSwitchTime):
 
     usingCPU = False
     preempted = False
-    isSwitching = False
 
     blockedProcesses = {}
 
@@ -47,15 +46,19 @@ def SRT(processList, f, alpha, contextSwitchTime):
         if usingCPU:
             # start running a process -- time == start time of the process
             if time == runningStart:
-                isSwitching = False
                 burstTime = runningEnd - runningStart
                 currentProcess = runningProcess
                 CPUBurstStart += burstTime
                 originalBurstTime = originalBurstTimes[runningProcess][0]
                 # If the current process is a newcomer
                 currentTau = processes[runningProcess].getTau()
-                if burstTime == originalBurstTime:
-                    printStartCPU(time, currentProcess, currentTau, burstTime, readyQueue)
+                if burstTime == originalBurstTime or burstTime < 0:
+                    printStartCPU(time, currentProcess, currentTau, originalBurstTime, readyQueue)
+                    if burstTime < 0:
+                        nextProcess = readyQueue[0]
+                        nextProcTau = processes[nextProcess].getTau()
+                        print(f"time {time}ms: Process {nextProcess} (tau {nextProcTau}ms) will preempt {currentProcess}", printReadyQueue(readyQueue))
+                        usingCPU = False
                 else:
                     printRestartCPU(time, currentProcess, burstTime, originalBurstTime, currentTau, readyQueue)
 
@@ -95,8 +98,8 @@ def SRT(processList, f, alpha, contextSwitchTime):
                 readyQueue.append(copy.deepcopy(proc))
                 unblockedProcesses.append(copy.deepcopy(proc))
         if unblockedProcesses:
+            readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
             if usingCPU:
-                readyQueue.sort(key=lambda x: (processes[x].getTau(), x))
                 nextProcess = readyQueue[0]
                 tempRunningTime = time - runningStart
                 extra = originalBurstTimes[runningProcess][0] - processes[runningProcess].getCurrCPUBurst()
@@ -104,16 +107,18 @@ def SRT(processList, f, alpha, contextSwitchTime):
                     printPreemption(time, runningProcess, processes, readyQueue)
                     preempted = True
                     numPreemptions += 1
-                    processes[runningProcess].getCPUBurstTimes()[0] -= tempRunningTime
+                    processes[runningProcess].getCPUBurstTimes()[0] -= tempRunningTime if tempRunningTime > 0 else 0
+                    processes[runningProcess].decreaseTempTau(tempRunningTime)
                     runningEnd = time
                     CPUBurstStart -= tempRunningTime
                     if nextProcess in unblockedProcesses:
                         unblockedProcesses.remove(nextProcess)
-                else:
-                    if time == 858829:
-                        readyQueue.sort(key=lambda x: (processes[x].getName(), x))
+                # else:
+                #     if time == 858829 or len(readyQueue) == 3:
+                #         readyQueue.sort(key=lambda x: (processes[x].getName(), x))
             for proc in unblockedProcesses:
                 printIOComplete(time, proc, processes[proc].getTau(), readyQueue)
+            readyQueue.sort(key=lambda x: (processes[x].getTempTau(), x))
 
         # Check if there's a process coming at this time
         getIncomingProcesses(time, processes, arrivalTimes, readyQueue, True)
@@ -128,7 +133,6 @@ def SRT(processList, f, alpha, contextSwitchTime):
             runningStart = time + hCST
             runningEnd = runningStart + processes[nextProcess].getCurrCPUBurst()
             runningProcess = nextProcess
-            isSwitching = True
 
             # Context switch
             numContextSwitches += 1

@@ -26,6 +26,7 @@ class Process:
         self.CPUBurstTimes = CPUBurstTimes
         self.IOBurstTimes = IOBurstTimes
         self.tau = tau
+        self.tempTau = tau
 
     def getName(self):
         return self.processName
@@ -57,9 +58,16 @@ class Process:
 
     def getTau(self):
         return self.tau
+    
+    def getTempTau(self):
+        return self.tempTau
+    
+    def decreaseTempTau(self, val):
+        self.tempTau -= val
 
     def setTau(self, tau):
         self.tau = tau
+        self.tempTau = tau
 
 
 def next_exp():
@@ -85,6 +93,10 @@ if __name__ == "__main__":
     # argv[5], contextSwitchTime -- time to perform a context switch
     # argv[6], alpha -- constant for SJF and SRT algorithms
     # argv[7], timeSlice -- time slice for RR algorithm
+
+    if len(sys.argv) != 8:
+        print("ERROR: Wrong amount of arguments!")
+        exit()
 
     try:
         numProcesses = int(sys.argv[1])
@@ -148,18 +160,18 @@ if __name__ == "__main__":
             f'Process {processName} (arrival time {arrivalTime} ms) '
             f'{numCPUBursts} CPU burst{"s" if numCPUBursts > 1 else ""} '
             f'(tau {TAU}ms)')
-        # printBurstTimes(CPUBurstTimes, IOBurstTimes)
+        printBurstTimes(CPUBurstTimes, IOBurstTimes)
 
     print()
 
     output = open("simout.txt", "a+")
     output.truncate(0)
 
-    # FCFS(copy.deepcopy(processList), output, contextSwitchTime)
+    FCFS(copy.deepcopy(processList), output, contextSwitchTime)
 
-    # SJF(copy.deepcopy(processList), output, alpha, contextSwitchTime)
+    SJF(copy.deepcopy(processList), output, alpha, contextSwitchTime)
 
     SRT(copy.deepcopy(processList), output, alpha, contextSwitchTime)
 
-    # RR(copy.deepcopy(processList), output, timeSlice, contextSwitchTime)
+    RR(copy.deepcopy(processList), output, timeSlice, contextSwitchTime)
 
