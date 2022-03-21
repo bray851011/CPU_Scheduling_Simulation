@@ -3,52 +3,44 @@ import copy
 from helpers import *
 from printHelpers import *
 
-def FCFS(processList, f, contextSwitchTime):
+def FCFS(f, processList, contextSwitchTime):
 
     algo = "FCFS"
-    numContextSwitches = 0
-    CPUBurstStart = 0
-    CPUBurstEnd = 0
-    waitTime = 0
-    useful_time = 0
     hCST = int(contextSwitchTime / 2)
+    numContextSwitches = 0
+    totalCPUBurstTime = 0
+    waitTime = 0
+    time = 0
 
-    printStartSimulator(algo)
-
-    readyQueue = []
     processes = {}
     arrivalTimes = {}
+    blockedProcesses = {}
     for process in processList:
         processes[process.getName()] = copy.deepcopy(process)
         arrivalTimes[process.getArrivalTime()] = copy.deepcopy(process)
+    readyQueue = []
 
-    time = 0
     usingCPU = False
-    runningProcess = ''
-    blockedProcesses = {}
+
+    printStartSimulator(algo)
 
     while True:
-
-        currentProcess = ''
 
         # If there are no processes left, then simulator is done
         if not processes:
             printEndSimulator(time + 1, algo)
             break
 
+        currentProcess = None
+
         if usingCPU:
-            # If a CPU burst is starting
             if time == runningStart:
                 burstTime = runningEnd - runningStart
-                CPUBurstStart += burstTime
-                useful_time += burstTime
-                CPUBurstEnd += 1
+                totalCPUBurstTime += burstTime
                 printStartCPU(time, runningProcess, -1, burstTime, readyQueue)
 
-            # If a CPU burst is complete
             if time == runningEnd:
                 currentProcess = runningProcess
-                # If no more CPU bursts
                 if not processes[currentProcess].getNumCPUBursts():
                     printProcessTerminated(time, currentProcess, readyQueue)
                     del processes[currentProcess]
@@ -64,7 +56,6 @@ def FCFS(processList, f, contextSwitchTime):
             if time == runningEnd + hCST:
                 usingCPU = False
 
-        # Get processes that are done with their IO block
         unblockedProcesses = []
         for proc, unblockTime in blockedProcesses.items():
             if time == unblockTime:
@@ -74,10 +65,8 @@ def FCFS(processList, f, contextSwitchTime):
         for proc in unblockedProcesses:
             printIOComplete(time, proc, -1, readyQueue)
 
-        # Check if there is a process coming at this time
         getIncomingProcesses(time, None, arrivalTimes, readyQueue, False)
 
-        # no process is running and there is at least one ready process
         if not usingCPU and readyQueue:
             usingCPU = True
             nextProcess = readyQueue.pop(0)
@@ -85,23 +74,22 @@ def FCFS(processList, f, contextSwitchTime):
             runningEnd = runningStart + processes[nextProcess].popCurrCPUBurst()
             runningProcess = nextProcess
 
-            # context switch
-            numContextSwitches += 1
-
-            if currentProcess != '' and nextProcess != currentProcess:
+            if currentProcess is not None and nextProcess is not currentProcess:
                 runningStart += hCST
                 runningEnd += hCST
+            
+            numContextSwitches += 1
 
         waitTime += len(readyQueue)
 
         time += 1
 
     totalCPUBursts = sum([proc.getNumCPUBursts() for proc in processList])
-    CPUBurstStart = sum([sum(proc.getCPUBurstTimes()) for proc in processList])
-    avgCPUBurstTime = CPUBurstStart / totalCPUBursts
+    totalCPUBurstTime = sum([sum(proc.getCPUBurstTimes()) for proc in processList])
+    avgCPUBurstTime = totalCPUBurstTime / totalCPUBursts
     avgWaitTime = waitTime / totalCPUBursts
-    avgTurnaroundTime = (CPUBurstStart + waitTime + numContextSwitches * contextSwitchTime) / totalCPUBursts
-    CPUUtilization = 100 * CPUBurstStart / (time + 1)
+    avgTurnaroundTime = (totalCPUBurstTime + waitTime + numContextSwitches * contextSwitchTime) / totalCPUBursts
+    CPUUtilization = 100 * totalCPUBurstTime / (time + 1)
 
     writeData(f, algo, avgCPUBurstTime, avgWaitTime, avgTurnaroundTime, numContextSwitches, 0, CPUUtilization)
     print()

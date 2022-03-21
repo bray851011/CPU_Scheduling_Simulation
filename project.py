@@ -63,7 +63,10 @@ class Process:
         return self.tempTau
     
     def decreaseTempTau(self, val):
-        self.tempTau -= val
+        try:
+            self.tempTau -= val
+        except:
+            self.tempTau = float("-inf")
 
     def setTau(self, tau):
         self.tau = tau
@@ -86,18 +89,10 @@ def printBurstTimes(CPUBurstTimes, IOBurstTimes):
 
 if __name__ == "__main__":
 
-    # argv[1], numProcesses -- the number of processes to stimulate
-    # argv[2], seed -- the seed for random number generator
-    # argv[3], lambda -- exponential distribution to determine interarrival time
-    # argv[4], expDstUpperBound -- upper bound for the exponential distribution
-    # argv[5], contextSwitchTime -- time to perform a context switch
-    # argv[6], alpha -- constant for SJF and SRT algorithms
-    # argv[7], timeSlice -- time slice for RR algorithm
-
     try:
         numProcesses = int(sys.argv[1])
         seed = int(sys.argv[2])
-        lam = float(sys.argv[3])
+        lam = float(sys.argv[3])    # For interarrival time
         expDstUpperBound = int(sys.argv[4])
         contextSwitchTime = int(sys.argv[5])
         alpha = float(sys.argv[6])
@@ -163,11 +158,11 @@ if __name__ == "__main__":
     output = open("simout.txt", "a+")
     output.truncate(0)
 
-    FCFS(copy.deepcopy(processList), output, contextSwitchTime)
+    FCFS(output, copy.deepcopy(processList), contextSwitchTime)
 
-    SJF(copy.deepcopy(processList), output, alpha, contextSwitchTime)
+    SJF(output, copy.deepcopy(processList), alpha, contextSwitchTime)
 
-    SRT(copy.deepcopy(processList), output, alpha, contextSwitchTime)
+    SRT(output, copy.deepcopy(processList), alpha, contextSwitchTime)
 
-    RR(copy.deepcopy(processList), output, timeSlice, contextSwitchTime)
+    RR(output, copy.deepcopy(processList), timeSlice, contextSwitchTime)
 

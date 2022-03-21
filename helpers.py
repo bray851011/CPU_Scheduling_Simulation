@@ -1,16 +1,9 @@
+
 import math
 from printHelpers import *
 
 def updateTau(alpha, burstTime, tau):
     return math.ceil(alpha * burstTime + (1 - alpha) * tau)
-
-
-def addWaitTime(prevReadyQueue, readyQueue):
-    count = 0
-    for process in set(prevReadyQueue):
-        if process in readyQueue:
-            count += 1
-    return count
 
 
 def getIncomingProcesses(time, processes, arrivalTimes, readyQueue, hasTau):
